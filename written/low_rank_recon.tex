@@ -1,0 +1,101 @@
+\documentclass{article} 
+\usepackage{amsmath,amssymb,amsfonts,amsthm,amsbsy,mathtools}
+\usepackage{graphicx,xcolor}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=darkgray
+}
+\usepackage[T1]{fontenc}
+\usepackage{enumitem}
+\usepackage{footnote,pifont,dsfont} 
+\usepackage[mathscr]{eucal}
+\usepackage{fullpage}
+\usepackage{thmtools}
+ 
+\usepackage{algpseudocode}
+\usepackage[algoruled,boxed,lined]{algorithm2e}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{example}[theorem]{Example}
+
+\theoremstyle{definition}
+\newtheorem{defn}[theorem]{Definition}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{claim}[theorem]{Claim}
+
+\theoremstyle{remark}
+\newtheorem{rem}[theorem]{Remark}
+
+\title{On Low-Rank Reconstructions}
+\date{}
+
+\begin{document}
+	\maketitle
+	
+	\section{Parameterized low-rank reconstruction}
+	First, we describe the parameterized low-rank reconstruction (note: I think
+	there are things we can say about non-parameterized version, but this
+	is future work). Consider a general learning problem of approximating (or
+	`learning') a function $f: X \mapsto Y$ with range $R \subseteq Y$, and
+	let $dim(X) = m$, $dim(Y) = n$, and $dim(R) = r$. Extending the linear
+	algebra notion of rank, we will say that the rank of $f$ is $r$. In most cases,
+	we are interested in learning low-rank transformations (such as classification,
+	where $r = 1$).
+	
+	Clearly, when $r$ is smaller, we cannot learn the inverse function $f^{-1}$
+	as it does not exist. As a specific example, consider a classifier that takes 
+	readings from different sensors of a power plant and classifies the situation
+	as normal/abnormal. If we are just given that some condition was
+	abnormal, it is impossible to reconstruct what the readings were, 
+	but if we were given that the cooling system was working correctly, it could
+	help us narrow down the initial state. 
+	
+	Formally, we want to find $g: Y' \mapsto X$, where $Y' \in 
+	\{ <Y> \times <X_1,X_2,\dots,X_m>\}$, such that $dim(Y')$ and
+	$\left| x - g(y') \right|$ are both small. In other words, we want to augment
+	the output space $Y$ with the minimum number of parameters from $X$ so
+	that an approximation of the inverse of $f$ exists. While it may be tempting
+	to set our objective function as 
+	$$ min_{dim(Y')} argmin_{g} \left| x-g(y') \right|,$$
+	this would be impossible to quantify since it does not specify a trade-off
+	between the minimality of the dimension and distance. There are two possible
+	work arounds. First, we could treat $dim(Y')$ as a regularizer, similar to 
+	norm regularizers, so that our objective function becomes
+	$$ argmin_{g,Y'} \left| x-g(y') + \alpha(dim(Y')) \right|,$$
+	where $\alpha$ is an non-decreasing function. Second, we could treat 
+	$dim(Y')$ as a hyper parameter and fix it to be some $K < n+m$, then our
+	objective function becomes
+	\begin{align*}
+	argmin_{g,Y'} \left| x-g(y') \right| \text{s.t. $dim(Y') = K$}.
+	\end{align*}
+	This is akin to setting a maximum height for a decision tree.
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
