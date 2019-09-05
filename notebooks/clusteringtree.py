@@ -41,8 +41,9 @@ class ClusteringTree:
                 continue
             
             if ret_tuple[1] < min_ent:
-                best_val, min_ent, best_dist = ret_tuple
-                best_dim = cur_dim
+                if ret_tuple[2] < best_dist:
+                    best_val, min_ent, best_dist = ret_tuple
+                    best_dim = cur_dim
                 
         if best_dim > -1:
             btree["c"] = ((best_dim, best_val))
