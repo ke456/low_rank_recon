@@ -22,10 +22,11 @@ class ClusteringTree:
         self.linspace = linspace
         self.ents=[]
         self.dists=[]
-        self.boundry={}
+        self.boundary={}
+        self.alpha = 0.01
         
     def cluster_multivariables(self, data):
-        self.cluster_multivariables_helper(data, self.boundry)
+        self.cluster_multivariables_helper(data, self.boundary)
         
     def cluster_multivariables_helper(self, data, btree):
         '''
@@ -35,12 +36,13 @@ class ClusteringTree:
         best_val, best_dim, min_ent, best_dist = (0,-1,1,float("inf"))
         
         # loop over all dim.
-        for cur_dim in range(data.ndim):
+        for cur_dim in range(data.shape[1]):
+            print("cur_dim:",cur_dim)
             ret_tuple = self.cluster_one_variable(data[:,cur_dim])
             if ret_tuple is None:
                 continue
             
-            if ret_tuple[1] < min_ent:
+            if ret_tuple[1] <= min_ent:
                 if ret_tuple[2] < best_dist:
                     best_val, min_ent, best_dist = ret_tuple
                     best_dim = cur_dim
@@ -57,16 +59,22 @@ class ClusteringTree:
     def cluster_one_variable(self, data):
         '''
             This algorithm only works with one dimension (label, x)
-            This will return a single best boundry along the variable x.
+            This will return a single best boundary along the variable x.
             Will return None if there is no split amongst the samples.
         '''
+        print('from', min(data), 'to', max(data))
         n = len(data)
+        
+        max_dist = (min(data) - max(data))**2
+        
         best_x = 0
         min_ent = 1
         best_dist = float("inf")
 
         self.ents = []
         self.dists = []
+        
+        k = np.ceil(self.alpha*len(data))
 
         for x in self.linspace:
             d1 = []
@@ -84,36 +92,41 @@ class ClusteringTree:
             c1 = avg(d1)
             c2 = avg(d2)
 
-            # compute average distance to centroid
+            # compute average energy to each centroid in the partition
             dist_to_c1 = 0
             dist_to_c2 = 0
             for d in d1:
-                dist_to_c1 += (d-c1)**2/len(d1)
+                dist_to_c1 += (d-c1)**2/max_dist
             for d in d2:
-                dist_to_c2 += (d-c2)**2/len(d2)
+                dist_to_c2 += (d-c2)**2/max_dist
 
             # compare square distances between points and boundary
             # left partition
-            for d in d1:
+            for i in range(len(d1)):
                 dist = []
-                for dd in d1:
-                    if dd != d:
-                        dist.append((dd-d)**2)
+                d = d1[i]
+                for j in range(len(d1)):
+                    dd = d1[j]
+                    if i != j:
+                        dist.append((dd-d)**2/max_dist)
                 if len(dist) != 0:
                     dist_p = min(dist)
-                    dist_b = (d-x)**2
-                    if dist_b < dist_p:
+                    dist_b = (d-x)**2/max_dist
+                    if dist_p < dist_b:
                         n_clustered += 1
+                        
             # right partition
-            for d in d2:
+            for i in range(len(d2)):
                 dist = []
-                for dd in d2:
-                    if dd != d:
-                        dist.append((dd-d)**2)
+                d = d2[i]
+                for j in range(len(d2)):
+                    dd = d2[j]
+                    if i != j:
+                        dist.append((dd-d)**2/max_dist)
                 if len(dist) != 0:
                     dist_p = min(dist)
-                    dist_b = (d-x)**2
-                    if dist_b < dist_p:
+                    dist_b = (d-x)**2/max_dist
+                    if dist_p < dist_b:
                         n_clustered += 1
 
             # compute entropy for this boundary
@@ -121,14 +134,17 @@ class ClusteringTree:
             p2 = 1-p1
             entropy = -p1*log2(p1) - p2*log2(p2)
             
-            self.ents.append(entropy)
-            self.dists.append((dist_to_c1+dist_to_c2)/2)
+            print('x:', x, 'total energy:', (dist_to_c1+dist_to_c2), 'entropy:', entropy, 'k', k)
             
-            if entropy <= min_ent and (dist_to_c1+dist_to_c2)/2 < best_dist:
+            self.ents.append(entropy)
+            self.dists.append((dist_to_c1+dist_to_c2))
+            
+            if entropy <= min_ent and (dist_to_c1+dist_to_c2) < best_dist:
                 min_ent = entropy
                 best_x = x
-                best_dist = (dist_to_c1+dist_to_c2)/2
+                best_dist = (dist_to_c1+dist_to_c2)
         
+        print('best x:', best_x, 'total energy:', best_dist, 'entropy:', min_ent)
         # Split data
         d1 = data[data < best_x]
         d2 = data[data >= best_x]
@@ -142,7 +158,7 @@ class ClusteringTree:
         plt.plot(self.linspace, self.ents, 'r', self.linspace, standardized_dist, 'b')
     
     def plot_boundries2D(self,y_upper_lim = float("inf"),y_lower_lim = float("-inf"),x_right_lim = float("inf"),x_left_lim = float("-inf")):
-        self.plot_boundries2D_helper(y_upper_lim, y_lower_lim, x_right_lim, x_left_lim, self.boundry)
+        self.plot_boundries2D_helper(y_upper_lim, y_lower_lim, x_right_lim, x_left_lim, self.boundary)
         
     def plot_boundries2D_helper(self,y_upper_lim,y_lower_lim,x_right_lim,x_left_lim,btree):
         if "c" not in btree:
