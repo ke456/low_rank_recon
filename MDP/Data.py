@@ -109,7 +109,7 @@ class Data:
     desirable.
     
     On the other hand, suppose for each cluster, its points are generate independently (this is
-    a more valid assumption on a model like GMM as opposed to k-means). The expect minimum 
+    a more valid assumption on a model like GMM as opposed to k-means). The expected minimum 
     separation in this case, with expectation conditioned on the probability that p belongs
     to c_i, would be \sum_{i} Pr(c_i | p) min_j Sep_p(i,j). Since we do not know Pr(c_i | p),
     we simplify this to be just Pr(c_i). This still makes sense intuitively: if a very frequent
@@ -119,7 +119,8 @@ class Data:
     small separation.
     
     To put everything together, we will call Pr(c_i) min_j Sep_p(i,j) the confidence that p belongs to
-    cluster i given only F(p) and \sum_{i} Pr(c_i) min_j Sep_p(i,j) as the score of p.
+    cluster i given only F(p) and \sum_{i} Pr(c_i) min_j Sep_p(i,j) as the score of p. We can also
+    swap out minimum separation for maximum or average separations
     '''
     def score_K_means(self, p):
         return 0
