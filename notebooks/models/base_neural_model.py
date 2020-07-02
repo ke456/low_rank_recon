@@ -1,8 +1,10 @@
 from model_abstract import ModelAbstract
 import torch.nn as nn
 
-def ModelBase(ModelAbstract):
+class EstimatorModelBase(ModelAbstract):
     """The simple neural network model."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
     
     def _initialize_layers(self):
         self.input_layer = nn.Sequential(
@@ -18,3 +20,4 @@ def ModelBase(ModelAbstract):
     
     def _forward_output(self, hidden_state):
         return self.output_layer(hidden_state)
+    

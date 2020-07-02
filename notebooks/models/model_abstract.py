@@ -4,7 +4,8 @@ class ModelAbstract(nn.Module):
     """An abstract class to extend neural network models.
     """
     
-    def init(self, input_dim, output_dim):
+    def __init__(self, input_dim, output_dim):
+        super(ModelAbstract, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
         self._initialize_layers()
@@ -28,7 +29,8 @@ class ModelAbstract(nn.Module):
         """Foward pass to predict the next action given state.
         Given that input and output
         """
-        self._forward_input(env_state)
+        features = self._forward_input(env_state)
         features = features.view(features.size(0), -1)
         out = self._forward_output(features)
         return out
+    
