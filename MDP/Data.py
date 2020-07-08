@@ -2,15 +2,26 @@ import copy
 from sklearn.cluster import KMeans
 import numpy as np
 import random as rand
+import statistics
 
 # assumes that the tuple given is (id, val)
-def bool_feature(t):
-    val = t[1]
+def bool_feature(p):
+    val = p
     res = [1 for i in range(len(val))]
     for i in range(len(val)):
         if (val[i] == None):
             res[i] = 0
     return res
+
+# projects p to the known features f. For example, if only
+# x and y are known in (x,y,z), then f = (1,1,0) and 
+# proj( (a,b,c) , f) = (a,b)
+def proj(p, f):
+    res = []
+    for i in range(len(f)):
+        if f[i] == 1:
+            res.append(p[i])
+    return np.array(res)
 
 # wrapper class for the data. Can load the data by
 # build an instance with file fname
@@ -24,13 +35,15 @@ class Data:
         self.normalizing_vals = ([], []) # use this to normalize new points
         self.clustering = None
         self.c_num = None
-        self.prob_clusters = [] # probably of cluster c appearing
+        self.prob_cluster = [] # probably of cluster c appearing
+        self.costs = []
     
     def __get_item__(self, key):
         return self.data(key)
     
     def loadfile(self, fname):
         self.data = [] # list of Tuples
+        temp_data = [] # just the data portion
         f = open(fname, 'r')
         lines = f.readlines()
         ID = 0
@@ -39,8 +52,12 @@ class Data:
             val = []
             for sv in s:
                 val.append(float(sv))
-            self.data.append((ID, val))
-            ID = ID+1
+            temp_data.append(val)
+        rand.shuffle(temp_data)
+        for d in temp_data:
+            self.data.append((ID,d))
+            ID += 1
+        self.costs = [ 0 for i in range(len(self.data[0][1]))]
             
     def get(self, key):
         return (copy.copy(self.data[key][0]), copy.copy(self.data[key][1]))
@@ -62,6 +79,18 @@ class Data:
     def update(self, p, f):
         p[1][f] = self.data[p[0]][1][f]
         
+    def next_state(self, state, action):
+        ns = (copy.copy(state[0]), copy.copy(state[1]))
+        ns[1][action] = self.data[state[0]][1][action]
+        return ns
+    
+    def actions(self, t):
+        res = []
+        for i in range(len(t[1])):
+            if t[1][i] == None:
+                res.append(i)
+        return res
+        
     def cluster_K_means(self, k):
         d = []
         for p in self.data:
@@ -73,19 +102,32 @@ class Data:
             self.prob_cluster[label] += 1
         for i in range(k):
             self.prob_cluster[i] /= len(self.data)
-  
+        print(self.prob_cluster)
+         
+    # retains r%
     def split(self, r):
-        test_n = int(r*len(self.data))
-        rand.shuffle(self.data)
+        test_n = int((1-r)*len(self.data))
         temp = Data(self.data[:test_n])
         self.data = self.data[test_n:]
+        for i in range(len(self.data)):
+            self.data[i] = ( self.data[i][0] - test_n , self.data[i][1] )
         return temp
         
-    # SCORE FUNCTIONS
-    # this is the top level score function; this is really the only one that
-    # should be used
-    def score(self, p):
-        return 0
+    # REWARD FUNCTIONS
+    def reward(self, state, action):
+        if self.c_num == self.KMEANS:
+            ns = self.next_state(state, action)
+            return (1-self.costs[action])*(self.score(state)-self.score(ns))
+    
+    '''
+    This is the top level score function, only use this one as it chooses
+    the correct one based on the settings. Score differs from the reward
+    of an action as the score is a function of the current state t.
+    '''
+    def score(self, t):
+        
+        if self.c_num == self.KMEANS:
+            return self.rank(t)
     
     '''
     Consider a point with some missing features (ex p = (1,2,-)). Dropping
@@ -122,9 +164,65 @@ class Data:
     cluster i given only F(p) and \sum_{i} Pr(c_i) min_j |Sep_p(i,j)| as the score of p. We can also
     swap out minimum separation for maximum or average separations
     '''
-    def score_K_means(self, p):
-        return 0
-            
+    def separation(self, p):
+        L = len(self.prob_cluster)
+        # project the centroids by the known features of p
+        f = bool_feature(p)
+        proj_p = proj(p,f)
+        proj_cent = [ proj(self.clustering.cluster_centers_[i],f) for i in range(L) ]
+        dists = [ np.linalg.norm( proj_cent[i] - proj_p, 2) for i in range(L) ]
+        
+        res = 0
+        for i in range(L):
+            seps = [ abs(dists[j] - dists[i]) for j in range(L) ]
+            del seps[i]
+            res += self.prob_cluster[i] * statistics.mean(seps)
+        return res
+        
+    def empty(self, p):
+        for i in p:
+            if i != None:
+                return False
+        return True
+    
+    def rank(self, t):
+        
+        L = len(self.prob_cluster)
+        p = t[1]
+        # project the centroids by the known features of p
+        f = bool_feature(p)
+        proj_p = proj(p,f)
+        proj_cent = [ proj(self.clustering.cluster_centers_[i],f) for i in range(L) ]
+        
+        dists = [ (np.linalg.norm( proj_cent[i] - proj_p, 2),i) for i in range(L) ]
+        dists.sort()
+        ranks = [ dists[i][1] for i in range(L) ]
+        #print("pred:",[dists[i][1] for i in range(len(dists))] )
+        
+        p_true = self.get(t[0])[1]
+        cent = self.clustering.cluster_centers_
+        dists_true = [ (np.linalg.norm( cent[i] - p_true, 2),i) for i in range(L) ]
+        dists_true.sort()
+        ranks_true = [dists_true[i][1] for i in range(L) ] 
+        #print("true:", [dists_true[i][1] for i in range(len(dists))])
+        
+        num_wrong = 0
+        for i in range(len(dists)):
+            if not(dists[i][1] == dists_true[i][1]):
+                num_wrong += 1
+        
+        ind = np.array([ ranks.index(i)+1 for i in range(L) ])
+        ind_true = np.array([ ranks_true.index(i)+1 for i in range(L)])
+        
+        if (self.empty(t[1])):
+            ind = [ i+1 for i in range(L) ]
+            rand.shuffle(ind)
+            return  np.linalg.norm(ind - ind_true,2) / L
+        
+        # using MSE
+        MSE = np.linalg.norm(ind - ind_true,2) / L
+        
+        return MSE
             
             
             
