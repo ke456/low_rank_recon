@@ -30,13 +30,16 @@ class Data:
     # Constants for clustering 'mode'
     KMEANS = 0
     
-    def __init__(self, tuples = []):
+    def __init__(self, unknown_rate=0.3, tuples = []):
         self.data = copy.copy(tuples)
         self.normalizing_vals = ([], []) # use this to normalize new points
         self.clustering = None
         self.c_num = None
         self.prob_cluster = [] # probably of cluster c appearing
         self.costs = []
+        self.action_space = None
+        self.observation_space = None
+        self.unknown_rate = unknown_rate
     
     def __get_item__(self, key):
         return self.data(key)
@@ -58,9 +61,21 @@ class Data:
             self.data.append((ID,d))
             ID += 1
         self.costs = [ 0 for i in range(len(self.data[0][1]))]
+        self.action_space = len(self.data[0][1])
+        self.observation_space = (self.action_space,)
             
     def get(self, key):
         return (copy.copy(self.data[key][0]), copy.copy(self.data[key][1]))
+    
+    def reset(self):
+        # Returns a random datapoint as state with some unknowns
+        datapoint = self.get(rand.randint(0, len(self.data)-1))
+        mask = [rand.uniform(0,1) for i in range(self.action_space)]
+        # Mask values with unknown
+        for index, prob in enumerate(mask):
+            if prob < self.unknown_rate:
+                datapoint[1][index] = None
+        return datapoint
             
     def normalize(self):
         num_features = len(self.data[0][1])
@@ -84,12 +99,31 @@ class Data:
         ns[1][action] = self.data[state[0]][1][action]
         return ns
     
+    def step(self, state, action):
+        next_state = self.next_state(state, action)
+        reward = self.reward(state, action)
+        done = None not in next_state
+        
+        # Last param is info
+        return next_state, reward, done, self.score(state)
+    
+    def bool_feature(self, p):
+        val = p
+        res = [1 for i in range(len(val))]
+        for i in range(len(val)):
+            if (val[i] == None):
+                res[i] = 0
+        return res
+    
     def actions(self, t):
         res = []
         for i in range(len(t[1])):
             if t[1][i] == None:
                 res.append(i)
         return res
+    
+    def sample_action(self, t):
+        return rand.choice(self.actions(t))
         
     def cluster_K_means(self, k):
         d = []

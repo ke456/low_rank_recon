@@ -22,8 +22,8 @@ class DQNAgent(BaseRLAgent):
                  **kwargs):
         super(DQNAgent, self).__init__(**kwargs)
         
-        self.action_space_size = env.action_space.n
-        self.observation_space_shape = env.observation_space.shape
+        self.action_space_size = env.action_space
+        self.observation_space_shape = env.observation_space
         
         self.replay_buffer = replay_buffer
         self.model = model(self.observation_space_shape, self.action_space_size)
@@ -35,23 +35,28 @@ class DQNAgent(BaseRLAgent):
         self.iteration = 0
         self.exploration_penalty = exploration_penalty
         
-    def get_action(self, state):
+    def get_action(self, state, env):
         """ Epsilon greedy, with probability 1-epsilon of taking a greedy action, 
         otherwise of taking a random action.
         
         Parameters
         ----------
-        state: vector which represents the state enviroment
+        state: vector which represents the state environment
+        env: a object of the environment
               
         Returns
         -------
         action index in action space
         """
         if(np.random.uniform() < self.epsilon):
-            return int(np.floor(np.random.uniform(high=self.action_space_size)))
+            return env.sample_action(state)
         
-        state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+        mask = torch.FloatTensor(env.bool_feature(state[1])) * float('-inf')
+        state = torch.FloatTensor(state[1]).unsqueeze(0).to(self.device)
+        
         q_values = self.model.forward(state)
+        q_values = q_values + mask
+        
         return np.argmax(q_values.cpu().detach().numpy()) # Detaches to prevent unused gradient flow
 
     def compute_loss(self, batch):
@@ -111,10 +116,13 @@ class DQNAgent(BaseRLAgent):
             episode_reward = 0
 
             for step in range(max_steps):
-                action = self.get_action(state)
-                next_state, reward, done, _ = env.step(action)
+                print(state)
+                action = self.get_action(state, env)
+                print(action)
+                next_state, reward, done, _ = env.step(state, action)
+                print(reward)
                 reward += self.exploration_penalty
-                self.replay_buffer.push(state, action, next_state, reward, done)
+                self.replay_buffer.push(state[1], action, next_state, reward, done)
                 episode_reward += reward
 
                 if len(self.replay_buffer) > batch_size:
@@ -241,7 +249,6 @@ def simple_example():
         if done: 
             break;
     print("Test Total Reward:", total_reward)
-    env.close()
     
     # Saving the network
     agent.to_pickle("somefile.pickle")
