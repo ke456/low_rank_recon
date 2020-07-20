@@ -51,11 +51,19 @@ class DQNAgent(BaseRLAgent):
         if(np.random.uniform() < self.epsilon):
             return env.sample_action(state)
         
-        mask = torch.FloatTensor(env.bool_feature(state[1])) * float('-inf')
+        mask = env.bool_feature(state[1])
+        for i in range(len(mask)):
+            if mask[i] == 1:
+                mask[i] = float('-inf')
+        
+        mask = torch.FloatTensor(mask)
         state = torch.FloatTensor(state[1]).unsqueeze(0).to(self.device)
         
+        
         q_values = self.model.forward(state)
+        
         q_values = q_values + mask
+        
         
         return np.argmax(q_values.cpu().detach().numpy()) # Detaches to prevent unused gradient flow
 
@@ -116,11 +124,11 @@ class DQNAgent(BaseRLAgent):
             episode_reward = 0
 
             for step in range(max_steps):
-                print(state)
+                #print(state)
                 action = self.get_action(state, env)
-                print(action)
+                #print(action)
                 next_state, reward, done, _ = env.step(state, action)
-                print(reward)
+                #print(reward)
                 reward += self.exploration_penalty
                 self.replay_buffer.push(state[1], action, next_state, reward, done)
                 episode_reward += reward
@@ -165,7 +173,7 @@ class DQNAgent(BaseRLAgent):
         states = torch.FloatTensor(batch.state, device=self.device)
         actions = torch.LongTensor(batch.action, device=self.device)
         rewards = torch.FloatTensor(batch.reward, device=self.device)
-        next_states = torch.FloatTensor(batch.next_state, device=self.device)
+        next_states = torch.FloatTensor([nextstate[1] for nextstate in batch.next_state], device=self.device)
         done = torch.FloatTensor(batch.done, device=self.device)
         
         # Unsqueeze a dimension

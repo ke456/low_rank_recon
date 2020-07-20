@@ -4,12 +4,17 @@ import numpy as np
 import random as rand
 import statistics
 
+nan = -0.0000001
+
+def isnan(v):
+    return v == nan
+
 # assumes that the tuple given is (id, val)
 def bool_feature(p):
     val = p
     res = [1 for i in range(len(val))]
     for i in range(len(val)):
-        if (val[i] == None):
+        if (isnan(val[i])):
             res[i] = 0
     return res
 
@@ -34,15 +39,17 @@ class Data:
         self.data = copy.copy(tuples)
         self.normalizing_vals = ([], []) # use this to normalize new points
         self.clustering = None
-        self.c_num = None
+        self.c_num = self.KMEANS
         self.prob_cluster = [] # probably of cluster c appearing
         self.costs = []
         self.action_space = None
         self.observation_space = None
         self.unknown_rate = unknown_rate
-    
-    def __get_item__(self, key):
-        return self.data(key)
+        self.tau = 0
+        self.max_cost = 0
+        self.alpha = 0.2
+        self.beta = 0.9
+        self.it = 0
     
     def loadfile(self, fname):
         self.data = [] # list of Tuples
@@ -61,20 +68,37 @@ class Data:
             self.data.append((ID,d))
             ID += 1
         self.costs = [ 0 for i in range(len(self.data[0][1]))]
-        self.action_space = len(self.data[0][1])
+        self.action_space = len(self.data[0][1])+1
         self.observation_space = (self.action_space,)
             
     def get(self, key):
-        return (copy.copy(self.data[key][0]), copy.copy(self.data[key][1]))
+        return (copy.copy(self.data[key][0]), copy.copy(self.data[key][1])+[0])
     
-    def reset(self):
-        # Returns a random datapoint as state with some unknowns
-        datapoint = self.get(rand.randint(0, len(self.data)-1))
+    # masks the value of t[1][i] to nan
+    def mask(self, t, i):
+        t[1][i] = nan
+    
+    def next_element(self):
+        if self.it == len(self.data):
+            self.it = 0
+        datapoint = self.get(self.it)
+        self.it += 1
         mask = [rand.uniform(0,1) for i in range(self.action_space)]
         # Mask values with unknown
         for index, prob in enumerate(mask):
             if prob < self.unknown_rate:
-                datapoint[1][index] = None
+                datapoint[1][index] = nan
+        return datapoint
+        
+    def reset(self):
+        # Returns a random datapoint as state with some unknowns
+        r=rand.randint(0, len(self.data)-1)
+        datapoint = self.get(r)
+        mask = [rand.uniform(0,1) for i in range(self.action_space)]
+        # Mask values with unknown
+        for index, prob in enumerate(mask):
+            if prob < self.unknown_rate:
+                datapoint[1][index] = nan
         return datapoint
             
     def normalize(self):
@@ -90,20 +114,42 @@ class Data:
             for d in self.data:
                 d[1][f] = (d[1][f]-min_v)/(max_v - min_v)
                 
+    def set_costs(self,costs=[]):
+        self.costs = copy.copy(costs)
+        n = len(self.data[0][1])
+        if len(self.costs) == 0:
+            self.costs = [1/n for i in range(n)]
+                
     # updats p with the value of p[f] filled in
     def update(self, p, f):
         p[1][f] = self.data[p[0]][1][f]
         
     def next_state(self, state, action):
+        c = 0
+        if action != -1 and action < len(state[1])-1:
+            c = self.costs[action]
         ns = (copy.copy(state[0]), copy.copy(state[1]))
-        ns[1][action] = self.data[state[0]][1][action]
+        ns[1][-1] += c
+        
+        if action != -1 and action < len(state[1])-1:
+            ns[1][action] = self.data[state[0]][1][action]
         return ns
     
     def step(self, state, action):
         next_state = self.next_state(state, action)
-        reward = self.reward(state, action)
-        done = None not in next_state
+        score = self.score(next_state)
+        reward = 0
+        if action != -1 and action < len(state[1])-1:
+            reward = self.alpha * -self.costs[action]
         
+        #done = ((score[0] <= self.tau) and score[1]) or (next_state[2] > self.max_cost)
+        done = (next_state[1][-1] >= self.max_cost) or (nan not in next_state[1]) or (action >= len(state[1])-1)
+        r = 0
+        if done:
+            r += self.beta*(1-score[0])
+            if score[1]:
+                r += (1-self.beta)*1
+        reward += (1-self.alpha) * r
         # Last param is info
         return next_state, reward, done, self.score(state)
     
@@ -111,15 +157,16 @@ class Data:
         val = p
         res = [1 for i in range(len(val))]
         for i in range(len(val)):
-            if (val[i] == None):
+            if (isnan(val[i])):
                 res[i] = 0
         return res
     
     def actions(self, t):
         res = []
-        for i in range(len(t[1])):
-            if t[1][i] == None:
+        for i in range(len(t[1])-1):
+            if isnan(t[1][i]):
                 res.append(i)
+        
         return res
     
     def sample_action(self, t):
@@ -141,10 +188,20 @@ class Data:
     # retains r%
     def split(self, r):
         test_n = int((1-r)*len(self.data))
-        temp = Data(self.data[:test_n])
+        temp = Data(tuples=self.data[:test_n])
         self.data = self.data[test_n:]
         for i in range(len(self.data)):
             self.data[i] = ( self.data[i][0] - test_n , self.data[i][1] )
+        temp.action_space = len(temp.data[0][1])
+        temp.observation_space = (temp.action_space,)
+        temp.costs = copy.copy(self.costs)
+        temp.tau = copy.copy(self.tau)
+        temp.clustering = copy.copy(self.clustering)
+        temp.unknown_rate = self.unknown_rate
+        temp.tau = self.tau
+        temp.max_cost = self.max_cost
+        temp.alpha = self.alpha
+        temp.beta = self.beta
         return temp
         
     # REWARD FUNCTIONS
@@ -215,14 +272,14 @@ class Data:
         
     def empty(self, p):
         for i in p:
-            if i != None:
+            if not isnan(i):
                 return False
         return True
     
     def rank(self, t):
         
-        L = len(self.prob_cluster)
-        p = t[1]
+        L = len(self.clustering.cluster_centers_)
+        p = t[1][:len(t[1])-1]
         # project the centroids by the known features of p
         f = bool_feature(p)
         proj_p = proj(p,f)
@@ -233,7 +290,7 @@ class Data:
         ranks = [ dists[i][1] for i in range(L) ]
         #print("pred:",[dists[i][1] for i in range(len(dists))] )
         
-        p_true = self.get(t[0])[1]
+        p_true = self.get(t[0])[1][:len(t[1])-1]
         cent = self.clustering.cluster_centers_
         dists_true = [ (np.linalg.norm( cent[i] - p_true, 2),i) for i in range(L) ]
         dists_true.sort()
@@ -251,12 +308,12 @@ class Data:
         if (self.empty(t[1])):
             ind = [ i+1 for i in range(L) ]
             rand.shuffle(ind)
-            return  np.linalg.norm(ind - ind_true,2) / L
+            return  (np.linalg.norm(ind - ind_true,2) / L, False)
         
         # using MSE
         MSE = np.linalg.norm(ind - ind_true,2) / L
         
-        return MSE
+        return MSE, (ranks_true[0] == ranks[0])
             
             
             
