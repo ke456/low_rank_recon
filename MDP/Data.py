@@ -18,6 +18,11 @@ def bool_feature(p):
             res[i] = 0
     return res
 
+def worst_error(n):
+    v1 = np.array([i+1 for i in range(n)])
+    v2 = np.array([n-i for i in range(n)])
+    return np.linalg.norm(v1-v2)/n
+
 # projects p to the known features f. For example, if only
 # x and y are known in (x,y,z), then f = (1,1,0) and 
 # proj( (a,b,c) , f) = (a,b)
@@ -47,9 +52,10 @@ class Data:
         self.unknown_rate = unknown_rate
         self.tau = 0
         self.max_cost = 0
-        self.alpha = 0.2
+        self.alpha = 0.3
         self.beta = 0.9
         self.it = 0
+        self.max_error = 0
     
     def loadfile(self, fname):
         self.data = [] # list of Tuples
@@ -84,21 +90,29 @@ class Data:
         datapoint = self.get(self.it)
         self.it += 1
         mask = [rand.uniform(0,1) for i in range(self.action_space)]
+        
         # Mask values with unknown
         for index, prob in enumerate(mask):
-            if prob < self.unknown_rate:
+            #if prob < self.unknown_rate:
+            if True:
                 datapoint[1][index] = nan
+        datapoint[1][-1] = 0
         return datapoint
         
     def reset(self):
         # Returns a random datapoint as state with some unknowns
-        r=rand.randint(0, len(self.data)-1)
-        datapoint = self.get(r)
+        #r=rand.randint(0, len(self.data)-1)
+        #datapoint = self.get(r)
+        if self.it == len(self.data):
+            self.it = 0
+        datapoint = self.get(self.it)
+        self.it += 1
         mask = [rand.uniform(0,1) for i in range(self.action_space)]
         # Mask values with unknown
         for index, prob in enumerate(mask):
             if prob < self.unknown_rate:
                 datapoint[1][index] = nan
+        datapoint[1][-1] = 0
         return datapoint
             
     def normalize(self):
@@ -143,10 +157,11 @@ class Data:
             reward = self.alpha * -self.costs[action]
         
         #done = ((score[0] <= self.tau) and score[1]) or (next_state[2] > self.max_cost)
-        done = (next_state[1][-1] >= self.max_cost) or (nan not in next_state[1]) or (action >= len(state[1])-1)
+        done = (next_state[1][-1] >= self.max_cost) or (nan not in state[1]) or (action >= len(state[1])-1)
+        #done = (nan not in state[1]) or (action >= len(state[1])-1)
         r = 0
         if done:
-            r += self.beta*(1-score[0])
+            r += self.beta*(1-score[0]/self.max_error)
             if score[1]:
                 r += (1-self.beta)*1
         reward += (1-self.alpha) * r
@@ -166,11 +181,16 @@ class Data:
         for i in range(len(t[1])-1):
             if isnan(t[1][i]):
                 res.append(i)
-        
+        res.append(len(t[1])-1)
         return res
     
     def sample_action(self, t):
-        return rand.choice(self.actions(t))
+        act = self.actions(t)
+        if (len(act) == 1):
+            return len(t[1])-1
+        r = rand.choice(self.actions(t)[:len(act)-1])
+        #c = rand.choice([r,act[-1]])
+        return r
         
     def cluster_K_means(self, k):
         d = []
@@ -183,6 +203,7 @@ class Data:
             self.prob_cluster[label] += 1
         for i in range(k):
             self.prob_cluster[i] /= len(self.data)
+        self.max_error = worst_error(k)
         print(self.prob_cluster)
          
     # retains r%
@@ -202,6 +223,7 @@ class Data:
         temp.max_cost = self.max_cost
         temp.alpha = self.alpha
         temp.beta = self.beta
+        temp.max_error = self.max_error
         return temp
         
     # REWARD FUNCTIONS
@@ -305,10 +327,8 @@ class Data:
         ind = np.array([ ranks.index(i)+1 for i in range(L) ])
         ind_true = np.array([ ranks_true.index(i)+1 for i in range(L)])
         
-        if (self.empty(t[1])):
-            ind = [ i+1 for i in range(L) ]
-            rand.shuffle(ind)
-            return  (np.linalg.norm(ind - ind_true,2) / L, False)
+        if (self.empty(p)):
+            return  (self.max_error, False)
         
         # using MSE
         MSE = np.linalg.norm(ind - ind_true,2) / L

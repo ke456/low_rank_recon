@@ -21,7 +21,7 @@ class DQNAgent(BaseRLAgent):
                  exploration_penalty=-0.1,
                  **kwargs):
         super(DQNAgent, self).__init__(**kwargs)
-        
+        self.cur_qval = []
         self.action_space_size = env.action_space
         self.observation_space_shape = env.observation_space
         
@@ -49,23 +49,29 @@ class DQNAgent(BaseRLAgent):
         action index in action space
         """
         if(np.random.uniform() < self.epsilon):
+            print("rand act")
             return env.sample_action(state)
         
+        print("choosing from q")
         mask = env.bool_feature(state[1])
-        for i in range(len(mask)):
+        for i in range(len(mask)-1):
             if mask[i] == 1:
                 mask[i] = float('-inf')
+        mask[-1] = float('-inf')
         
         mask = torch.FloatTensor(mask)
         state = torch.FloatTensor(state[1]).unsqueeze(0).to(self.device)
         
-        
+        #print("state:",state)
         q_values = self.model.forward(state)
         
         q_values = q_values + mask
+        q = q_values.cpu().detach().numpy()
+        self.cur_qval = q[0]
+        print("q:",q[0])
         
-        
-        return np.argmax(q_values.cpu().detach().numpy()) # Detaches to prevent unused gradient flow
+        #return np.argmax(q_values.cpu().detach().numpy()) # Detaches to prevent unused gradient flow
+        return np.argmax(q) # Detaches to prevent unused gradient flow
 
     def compute_loss(self, batch):
         """ Calculates loss of a batch using loss.
@@ -125,6 +131,7 @@ class DQNAgent(BaseRLAgent):
 
             for step in range(max_steps):
                 #print(state)
+                
                 action = self.get_action(state, env)
                 #print(action)
                 next_state, reward, done, _ = env.step(state, action)
@@ -137,9 +144,16 @@ class DQNAgent(BaseRLAgent):
                     self.update(batch_size)
                     self.iteration += 1
 
-                if done or step == max_steps-1:
+                if done or (step == max_steps-1):
                     episode_rewards.append(episode_reward)
-                    print("Episode " + str(episode) + ": " + str(episode_reward), '\t', self.epsilon)
+                    #print("end state:", state)
+                    print("Episode " + str(episode) + ": " + "%.3f" % episode_reward)
+                    #print("Episode " + str(episode) + ": " + "%.3f" % episode_reward, '\t', 
+                    #      done, '\t',
+                    #      "%.3f" % self.epsilon,'\t', 
+                    #      "%.3f" % env.score(state)[0],'\t', 
+                    #      state[0],'\t', 
+                    #      sum(env.bool_feature(state[1])))
                     self.update_epsilon()
                     break
 
