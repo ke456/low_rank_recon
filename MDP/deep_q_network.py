@@ -49,13 +49,14 @@ class DQNAgent(BaseRLAgent):
         action index in action space
         """
         if(np.random.uniform() < self.epsilon):
-            print("rand act")
+            #print("rand act")
             return env.sample_action(state)
         
-        print("choosing from q")
+        #print("choosing from q")
+        actions = env.actions(state)
         mask = env.bool_feature(state[1])
         for i in range(len(mask)-1):
-            if mask[i] == 1:
+            if mask[i] == 1 or i not in actions:
                 mask[i] = float('-inf')
         mask[-1] = float('-inf')
         
@@ -68,9 +69,12 @@ class DQNAgent(BaseRLAgent):
         q_values = q_values + mask
         q = q_values.cpu().detach().numpy()
         self.cur_qval = q[0]
-        print("q:",q[0])
+        #print("q:",q[0])
         
         #return np.argmax(q_values.cpu().detach().numpy()) # Detaches to prevent unused gradient flow
+        max_val = np.max(q)
+        if max_val == float('-inf'):
+            return len(mask)-1
         return np.argmax(q) # Detaches to prevent unused gradient flow
 
     def compute_loss(self, batch):
@@ -146,8 +150,9 @@ class DQNAgent(BaseRLAgent):
 
                 if done or (step == max_steps-1):
                     episode_rewards.append(episode_reward)
-                    #print("end state:", state)
+                    print("end state:", env.bool_feature(state[1]),"cost:", state[1][-1])
                     print("Episode " + str(episode) + ": " + "%.3f" % episode_reward)
+                    print(self.cur_qval)
                     #print("Episode " + str(episode) + ": " + "%.3f" % episode_reward, '\t', 
                     #      done, '\t',
                     #      "%.3f" % self.epsilon,'\t', 

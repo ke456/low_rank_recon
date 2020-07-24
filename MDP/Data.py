@@ -56,6 +56,8 @@ class Data:
         self.beta = 0.9
         self.it = 0
         self.max_error = 0
+        self.groups = []
+        rand.seed(0)
     
     def loadfile(self, fname):
         self.data = [] # list of Tuples
@@ -101,12 +103,12 @@ class Data:
         
     def reset(self):
         # Returns a random datapoint as state with some unknowns
-        #r=rand.randint(0, len(self.data)-1)
-        #datapoint = self.get(r)
-        if self.it == len(self.data):
-            self.it = 0
-        datapoint = self.get(self.it)
-        self.it += 1
+        r=rand.randint(0, len(self.data)-1)
+        datapoint = self.get(r)
+        #if self.it == len(self.data):
+        #    self.it = 0
+        #datapoint = self.get(self.it)
+        #self.it += 1
         mask = [rand.uniform(0,1) for i in range(self.action_space)]
         # Mask values with unknown
         for index, prob in enumerate(mask):
@@ -133,6 +135,10 @@ class Data:
         n = len(self.data[0][1])
         if len(self.costs) == 0:
             self.costs = [1/n for i in range(n)]
+    
+    def set_groups(self,groups=[]):
+        for g in groups:
+            self.groups.append(copy.copy(g))
                 
     # updats p with the value of p[f] filled in
     def update(self, p, f):
@@ -142,11 +148,19 @@ class Data:
         c = 0
         if action != -1 and action < len(state[1])-1:
             c = self.costs[action]
+            
         ns = (copy.copy(state[0]), copy.copy(state[1]))
-        ns[1][-1] += c
+        ns[1][-1] = ns[1][-1] +  c
         
         if action != -1 and action < len(state[1])-1:
             ns[1][action] = self.data[state[0]][1][action]
+            group = []
+            for g in self.groups:
+                if action in g:
+                    group = g
+            for a in group:
+                ns[1][a] = self.data[state[0]][1][a]
+                
         return ns
     
     def step(self, state, action):
@@ -157,7 +171,7 @@ class Data:
             reward = self.alpha * -self.costs[action]
         
         #done = ((score[0] <= self.tau) and score[1]) or (next_state[2] > self.max_cost)
-        done = (next_state[1][-1] >= self.max_cost) or (nan not in state[1]) or (action >= len(state[1])-1)
+        done = (state[1][-1] > self.max_cost) or (nan not in state[1]) or (action >= len(state[1])-1)
         #done = (nan not in state[1]) or (action >= len(state[1])-1)
         r = 0
         if done:
@@ -179,7 +193,8 @@ class Data:
     def actions(self, t):
         res = []
         for i in range(len(t[1])-1):
-            if isnan(t[1][i]):
+            if isnan(t[1][i]) and (self.costs[i] + t[1][-1] <= self.max_cost):
+                #print("action:",i, "utdc:", self.costs[i] + t[1][-1])
                 res.append(i)
         res.append(len(t[1])-1)
         return res
