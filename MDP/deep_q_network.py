@@ -49,33 +49,59 @@ class DQNAgent(BaseRLAgent):
         action index in action space
         """
         if(np.random.uniform() < self.epsilon):
-            #print("rand act")
+            if self.verbose>2: print("rand act")
             return env.sample_action(state)
         
-        #print("choosing from q")
+        mask = self.get_mask(state, env)
+        
+        state = torch.FloatTensor(state[1]).unsqueeze(0).to(self.device)
+        
+        #print("state:",state)
+        q_values = self.get_q_values(state)
+        
+        q_values = q_values + mask
+        q = q_values.cpu().detach().numpy() # Detaches to prevent unused gradient flow
+        self.cur_qval = q[0]    # Save the Q value for debugging
+        # print("q:",self.cur_qval)
+        
+        #return np.argmax(q_values.cpu().detach().numpy()) # Detaches to prevent unused gradient flow
+        return (q.shape[1] - 1) - np.argmax(q[0][::-1]) # Reverses list to take last index by default
+    
+    def get_q_values(self, state):
+        """ Returns a vector of Q values from the model.
+        
+        Parameters
+        ----------
+        state: vector which represents the state environment
+              
+        Returns
+        -------
+        FloatTensor of state
+        """
+        return self.model.forward(state)
+    
+    def get_mask(self, state, env):
+        """ Creates a mask of the actions given the environment.
+        This function should be specific to the environment.
+        
+        Parameters
+        ----------
+        state: vector which represents the state environment
+        env: a object of the environment
+              
+        Returns
+        -------
+        FloatTensor of either 0, denoting valid actions, and -inf, denoting invalid actions.
+        """
         actions = env.actions(state)
         mask = env.bool_feature(state[1])
         for i in range(len(mask)-1):
             if mask[i] == 1 or i not in actions:
                 mask[i] = float('-inf')
+        # Last action is cost
         mask[-1] = float('-inf')
         
-        mask = torch.FloatTensor(mask)
-        state = torch.FloatTensor(state[1]).unsqueeze(0).to(self.device)
-        
-        #print("state:",state)
-        q_values = self.model.forward(state)
-        
-        q_values = q_values + mask
-        q = q_values.cpu().detach().numpy()
-        self.cur_qval = q[0]
-        #print("q:",q[0])
-        
-        #return np.argmax(q_values.cpu().detach().numpy()) # Detaches to prevent unused gradient flow
-        max_val = np.max(q)
-        if max_val == float('-inf'):
-            return len(mask)-1
-        return np.argmax(q) # Detaches to prevent unused gradient flow
+        return torch.FloatTensor(mask)
 
     def compute_loss(self, batch):
         """ Calculates loss of a batch using loss.
@@ -134,12 +160,10 @@ class DQNAgent(BaseRLAgent):
             episode_reward = 0
 
             for step in range(max_steps):
-                #print(state)
-                
                 action = self.get_action(state, env)
-                #print(action)
+                if self.verbose>1: print("action:", action)
                 next_state, reward, done, _ = env.step(state, action)
-                #print(reward)
+                if self.verbose>2: print("reward", reward)
                 reward += self.exploration_penalty
                 self.replay_buffer.push(state[1], action, next_state, reward, done)
                 episode_reward += reward
@@ -150,22 +174,30 @@ class DQNAgent(BaseRLAgent):
 
                 if done or (step == max_steps-1):
                     episode_rewards.append(episode_reward)
-                    print("end state:", env.bool_feature(state[1]),"cost:", state[1][-1])
-                    print("Episode " + str(episode) + ": " + "%.3f" % episode_reward)
-                    print(self.cur_qval)
-                    #print("Episode " + str(episode) + ": " + "%.3f" % episode_reward, '\t', 
-                    #      done, '\t',
-                    #      "%.3f" % self.epsilon,'\t', 
-                    #      "%.3f" % env.score(state)[0],'\t', 
-                    #      state[0],'\t', 
-                    #      sum(env.bool_feature(state[1])))
+                    self.print_episode_debug(episode, episode_reward, state)
                     self.update_epsilon()
                     break
 
                 state = next_state
 
         return episode_rewards
-
+    
+    def print_episode_debug(self, episode, episode_reward, state):
+        if self.verbose>0: print("end state:", env.bool_feature(state[1]),"cost:", state[1][-1])
+        if self.verbose>0: print(self.cur_qval)
+        if self.verbose==0: 
+            print("Episode " + str(episode) + ",",
+                                  "reward:", "%.3f" % episode_reward,
+                                  "eps:", "%.3f" % self.epsilon,
+                                  end="\r")
+        if self.verbose==1: print("Episode " + str(episode) + ", reward:", "%.3f" % episode_reward)
+        if self.verbose>=2: print("Episode " + str(episode) + ": " + "%.3f" % episode_reward, '\t', 
+                done, '\t',
+                "%.3f" % self.epsilon,'\t', 
+                "%.3f" % env.score(state)[0],'\t', 
+                state[0],'\t', 
+                sum(env.bool_feature(state[1])))
+        
     def _predict_q(self, states, actions):
         """Value function for state action pairs.
         Parameters

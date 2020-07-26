@@ -69,7 +69,7 @@ class BaseRLAgent(object):
             optimizer=torch.optim.Adam,
             warm_start=False,
             device=None,
-            verbose=True):
+            verbose=1):
         self.batch_size = batch_size
         self.max_steps = max_steps
         self.max_episodes = max_episodes
@@ -84,7 +84,7 @@ class BaseRLAgent(object):
         self.verbose=verbose
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
-            if verbose:
+            if verbose > 0:
                 print("Using","cuda" if torch.cuda.is_available() else "cpu")
         self.device = torch.device(device)
         self.params = [
