@@ -3,6 +3,7 @@ import torch.nn as nn
 from base_rl_agent_torch import BaseRLAgent
 import numpy as np
 import random
+import copy as copy
 
 class DQNAgent(BaseRLAgent):
     """Base model for Deep Q Network Agents
@@ -55,14 +56,12 @@ class DQNAgent(BaseRLAgent):
         mask = self.get_mask(state, env)
         
         state = torch.FloatTensor(state[1]).unsqueeze(0).to(self.device)
-        
-        #print("state:",state)
         q_values = self.get_q_values(state)
         
         q_values = q_values + mask
         q = q_values.cpu().detach().numpy() # Detaches to prevent unused gradient flow
         self.cur_qval = q[0]    # Save the Q value for debugging
-        # print("q:",self.cur_qval)
+        #print("q:",self.cur_qval)
         
         #return np.argmax(q_values.cpu().detach().numpy()) # Detaches to prevent unused gradient flow
         return (q.shape[1] - 1) - np.argmax(q[0][::-1]) # Reverses list to take last index by default
@@ -94,7 +93,8 @@ class DQNAgent(BaseRLAgent):
         FloatTensor of either 0, denoting valid actions, and -inf, denoting invalid actions.
         """
         actions = env.actions(state)
-        mask = env.bool_feature(state[1])
+        #mask = env.bool_feature(state[1])
+        mask = env.get_mask(state)
         for i in range(len(mask)-1):
             if mask[i] == 1 or i not in actions:
                 mask[i] = float('-inf')
@@ -174,7 +174,7 @@ class DQNAgent(BaseRLAgent):
 
                 if done or (step == max_steps-1):
                     episode_rewards.append(episode_reward)
-                    self.print_episode_debug(episode, episode_reward, state)
+                    self.print_episode_debug(episode, episode_reward, state,env)
                     self.update_epsilon()
                     break
 
@@ -182,8 +182,8 @@ class DQNAgent(BaseRLAgent):
 
         return episode_rewards
     
-    def print_episode_debug(self, episode, episode_reward, state):
-        if self.verbose>0: print("end state:", env.bool_feature(state[1]),"cost:", state[1][-1])
+    def print_episode_debug(self, episode, episode_reward, state,env):
+        if self.verbose>0: print("end state:", state[1],"score:", env.score(state))
         if self.verbose>0: print(self.cur_qval)
         if self.verbose==0: 
             print("Episode " + str(episode) + ",",
