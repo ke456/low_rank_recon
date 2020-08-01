@@ -21,3 +21,11 @@ class EstimatorModelBase(ModelAbstract):
     def _forward_output(self, hidden_state):
         return self.output_layer(hidden_state)
     
+    def forward(self, env_state):
+        """Foward pass to predict the next action given state.
+        Given that input and output
+        """
+        features = self._forward_input(env_state)
+        features = features.view(features.size(0), -1)
+        out = self._forward_output(features)
+        return out
