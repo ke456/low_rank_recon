@@ -107,8 +107,8 @@ class Data:
         
         # Mask values with unknown
         for index, prob in enumerate(mask):
-            #if prob < self.unknown_rate:
-            if True:
+            if prob < self.unknown_rate:
+            #if True:
                 datapoint[2][index] = nan
         datapoint[2][-1] = nan
         return (datapoint[0], bool_feature(datapoint[2]), datapoint[2])
@@ -296,6 +296,8 @@ class Data:
         if str(features) in self.ranks:
             return self.ranks[str(features)]
         else:
+            #if (len(self.validation) != len(self.data)):
+            #    print("validation size:", len(self.validation))
             for i in self.validation:
                 cur = self.get(i)
                 for j in range(len(cur[1])):
