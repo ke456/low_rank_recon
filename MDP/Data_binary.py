@@ -192,7 +192,7 @@ class Data:
         if done:
             score = self.score(next_state)
             r += (1-score)
-        reward += (1-self.alpha) * r * 100
+        reward += (1-self.alpha) * r
         # Last param is info
         return next_state, reward, done, 0
     
@@ -314,6 +314,19 @@ class Data:
                 return False
         return True
     
+    def compute_ranks(self, t):
+        L = len(self.clustering.cluster_centers_)
+        p = t[2][:len(t[2])-1]
+        # project the centroids by the known features of p
+        f = bool_feature(p)
+        proj_p = proj(p,f)
+        proj_cent = [ proj(self.clustering.cluster_centers_[i],f) for i in range(L) ]
+        
+        dists = [ (np.linalg.norm( proj_cent[i] - proj_p, 2),i) for i in range(L) ]
+        dists.sort()
+        ranks = [ dists[i][1] for i in range(L) ]
+        return ranks
+    
     def rank(self, t):
         
         L = len(self.clustering.cluster_centers_)
@@ -340,6 +353,24 @@ class Data:
         MSE = np.linalg.norm(ind - ind_true,2) / L
         
         return MSE, (ranks_true[0] == ranks[0])
+    
+    # retrieves K most similar elements to t
+    def retrieve(self, ranks, p, K):
+        first = ranks.index(0)
+        fs = bool_feature(p)
+        p_fs = proj(p,fs)
+        # measure the distance between the given ranks and ranks of each point in D
+        dists = [ (np.linalg.norm( np.array(ranks) - np.array(self.true_ranks[i]),2)+
+                   np.linalg.norm( p_fs - proj(self.data[i][1], fs),2), i) for i in range(len(self.data)) ]
+        dists.sort()
+        
+        return [ self.data[dists[i][1]] for i in range(K) ]
+    
+    def nearest_points(self, p, K):
+        dists = [ (np.linalg.norm( np.array(p) - np.array(self.data[i]), 2),i) for i in range(len(self.data)) ]
+        dists.sort()
+        return [ self.data[dists[i][1]] for i in range(K) ]
+        
             
             
             
