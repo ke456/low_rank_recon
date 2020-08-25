@@ -60,7 +60,7 @@ def runtest(fname, max_cost=0.5, max_eps=4000, costs=None, K=7):
                 observation, reward, done, info = test_env.step(observation, action)
         ranks = test_env.compute_ranks(observation)
         ret1 = env.retrieve(ranks, observation[2][:n], k)
-        print("r1:",ranks,sum([ np.linalg.norm(np.array(ob_full[2][:n]) - np.array(ret1[i][1]),2) for i in range(k)]))
+        #print("r1:",ranks,sum([ np.linalg.norm(np.array(ob_full[2][:n]) - np.array(ret1[i][1]),2) for i in range(k)]))
         
         dist1 += sum([ np.linalg.norm(np.array(ob_full[2][:n]) - np.array(ret1[i][1]),2) for i in range(k)])
         
@@ -81,9 +81,9 @@ def runtest(fname, max_cost=0.5, max_eps=4000, costs=None, K=7):
             
         ranks = test_env.compute_ranks(observation)
         ret2 = env.retrieve(ranks, observation[2][:n], k)
-        print("r2:",ranks,sum([ np.linalg.norm(np.array(ob_full[2][:n]) - np.array(ret2[i][1]),2) for i in range(k)]))
-        print("re:", test_env.compute_ranks(ob_full))
-        print()
+        #print("r2:",ranks,sum([ np.linalg.norm(np.array(ob_full[2][:n]) - np.array(ret2[i][1]),2) for i in range(k)]))
+        #print("re:", test_env.compute_ranks(ob_full))
+        #print()
         
         dist2 += sum([ np.linalg.norm(np.array(ob_full[2][:n]) - np.array(ret2[i][1]),2) for i in range(k)])
         

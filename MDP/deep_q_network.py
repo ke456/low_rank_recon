@@ -161,9 +161,9 @@ class DQNAgent(BaseRLAgent):
 
             for step in range(max_steps):
                 action = self.get_action(state, env)
-                if self.verbose>1: print("action:", action)
+                #if self.verbose>1: print("action:", action)
                 next_state, reward, done, _ = env.step(state, action)
-                if self.verbose>2: print("reward", reward)
+                #if self.verbose>2: print("reward", reward)
                 reward += self.exploration_penalty
                 self.replay_buffer.push(state[1], action, next_state, reward, done)
                 episode_reward += reward
@@ -174,7 +174,7 @@ class DQNAgent(BaseRLAgent):
 
                 if done or (step == max_steps-1):
                     episode_rewards.append(episode_reward)
-                    self.print_episode_debug(episode, episode_reward, state,env)
+                    #self.print_episode_debug(episode, episode_reward, state,env)
                     self.update_epsilon()
                     break
 
