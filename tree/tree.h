@@ -128,5 +128,8 @@ public:
 
 	// computes the score of updating feature f with value val
 	double update_score(const Tuple &t, const int f, const double val);
+
+	double knn_avg_dist(const Tuple &t, const Tuple &t_true, const int k);
+
 };
 #endif

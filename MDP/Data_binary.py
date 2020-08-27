@@ -190,8 +190,8 @@ class Data:
         r = 0
         
         if done:
-            score = self.score(next_state)
-            r += (1-score)
+            score = self.score(next_state)/self.max_error
+            r += (1-score)*100
         reward += (1-self.alpha) * r
         # Last param is info
         return next_state, reward, done, 0
@@ -361,6 +361,18 @@ class Data:
         p_fs = proj(p,fs)
         # measure the distance between the given ranks and ranks of each point in D
         dists = [ (np.linalg.norm( np.array(ranks) - np.array(self.true_ranks[i]),2)+
+                   np.linalg.norm( p_fs - proj(self.data[i][1], fs),2), i) for i in range(len(self.data)) ]
+        dists.sort()
+        
+        return [ self.data[dists[i][1]] for i in range(K) ]
+    
+     # retrieves K most similar elements to t
+    def retrieve2(self, ranks, p, K):
+        first = ranks.index(0)
+        fs = bool_feature(p)
+        p_fs = proj(p,fs)
+        # measure the distance between the given ranks and ranks of each point in D
+        dists = [ (0+
                    np.linalg.norm( p_fs - proj(self.data[i][1], fs),2), i) for i in range(len(self.data)) ]
         dists.sort()
         

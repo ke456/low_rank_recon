@@ -9,18 +9,10 @@ import random
 import copy
 from Data_binary import *
 
-def runtest(fname, max_cost=0.5, max_eps=4000, costs=None, K=7):
-    env = Data(unknown_rate=1)
-    env.loadfile(fname)
-    env.normalize()
-    env.alpha = 0
-    env.cluster_K_means(K)
-    if costs is None:
-        env.set_costs()
-    else:
-        env.set_costs(costs)
-    env.max_cost = max_cost
-    test_env = env.split(0.80)
+
+
+def runtest(env, test_env, max_eps=4000, epsilon_decay=0.9995):
+    
     
     MAX_EPISODES = max_eps
     MAX_STEPS = 32
@@ -34,7 +26,7 @@ def runtest(fname, max_cost=0.5, max_eps=4000, costs=None, K=7):
                            buffer,max_steps=MAX_STEPS, 
                            max_episodes=MAX_EPISODES,
                            gamma=0.8,
-                           epsilon_decay=0.9995,
+                           epsilon_decay=epsilon_decay,
                            exploration_penalty=-0.0,
                            verbose=0 # Verbosity level
                           )
@@ -47,6 +39,8 @@ def runtest(fname, max_cost=0.5, max_eps=4000, costs=None, K=7):
     
     dist1 = 0
     dist2 = 0
+    dist3 = 0
+    dist4 = 0
     for it in range(N):
         observation = test_env.next_element()
         ob_cp = (copy.copy(observation[0]),copy.copy(observation[1]), copy.copy(observation[2]))
@@ -60,9 +54,11 @@ def runtest(fname, max_cost=0.5, max_eps=4000, costs=None, K=7):
                 observation, reward, done, info = test_env.step(observation, action)
         ranks = test_env.compute_ranks(observation)
         ret1 = env.retrieve(ranks, observation[2][:n], k)
+        ret3 = env.retrieve2(ranks, observation[2][:n], k)
         #print("r1:",ranks,sum([ np.linalg.norm(np.array(ob_full[2][:n]) - np.array(ret1[i][1]),2) for i in range(k)]))
         
         dist1 += sum([ np.linalg.norm(np.array(ob_full[2][:n]) - np.array(ret1[i][1]),2) for i in range(k)])
+        dist3 += sum([ np.linalg.norm(np.array(ob_full[2][:n]) - np.array(ret3[i][1]),2) for i in range(k)])
         
         observation = ob_cp
         done = False
@@ -81,13 +77,15 @@ def runtest(fname, max_cost=0.5, max_eps=4000, costs=None, K=7):
             
         ranks = test_env.compute_ranks(observation)
         ret2 = env.retrieve(ranks, observation[2][:n], k)
+        ret4 = env.retrieve2(ranks, observation[2][:n], k)
         #print("r2:",ranks,sum([ np.linalg.norm(np.array(ob_full[2][:n]) - np.array(ret2[i][1]),2) for i in range(k)]))
         #print("re:", test_env.compute_ranks(ob_full))
         #print()
         
         dist2 += sum([ np.linalg.norm(np.array(ob_full[2][:n]) - np.array(ret2[i][1]),2) for i in range(k)])
+        dist4 += sum([ np.linalg.norm(np.array(ob_full[2][:n]) - np.array(ret4[i][1]),2) for i in range(k)])
         
-    return dist1,dist2,episode_rewards
+    return dist1,dist2,dist3,dist4,episode_rewards
     
 def plot_reward_per_episode(episode_rewards):
     import matplotlib.pyplot as plt
