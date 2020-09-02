@@ -53,7 +53,7 @@ class DQNAgent(BaseRLAgent):
             if self.verbose>2: print("rand act")
             return env.sample_action(state)
         
-        mask = self.get_mask(state, env)
+        mask = self.get_mask(state, env).to(self.device)
         
         state = torch.FloatTensor(state[1]).unsqueeze(0).to(self.device)
         q_values = self.get_q_values(state)
@@ -153,6 +153,9 @@ class DQNAgent(BaseRLAgent):
         max_steps: int
         batch_size: int
         """
+        self.model.to(self.device)
+        self.target_model.to(self.device)
+        
         episode_rewards = []
 
         for episode in range(max_episodes):
@@ -209,7 +212,8 @@ class DQNAgent(BaseRLAgent):
         -------
         list of Q values for each actions/state pair
         """
-        return self.model.forward(states).gather(1, actions).to(self.device)
+        preds = self.model.forward(states)
+        return preds.gather(1, actions)
 
     def __get_tensors_from_batch__(self, batch):
         """Maps transitions in a batch to tensors.
@@ -221,11 +225,11 @@ class DQNAgent(BaseRLAgent):
         -------
         float tensors of Transitions
         """
-        states = torch.FloatTensor(batch.state, device=self.device)
-        actions = torch.LongTensor(batch.action, device=self.device)
-        rewards = torch.FloatTensor(batch.reward, device=self.device)
-        next_states = torch.FloatTensor([nextstate[1] for nextstate in batch.next_state], device=self.device)
-        done = torch.FloatTensor(batch.done, device=self.device)
+        states = torch.FloatTensor(batch.state).to(self.device)
+        actions = torch.LongTensor(batch.action).to(self.device)
+        rewards = torch.FloatTensor(batch.reward).to(self.device)
+        next_states = torch.FloatTensor([nextstate[1] for nextstate in batch.next_state]).to(self.device)
+        done = torch.FloatTensor(batch.done).to(self.device)
         
         # Unsqueeze a dimension
         actions = actions.view(actions.size(0), 1)
