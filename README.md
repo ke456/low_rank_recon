@@ -23,12 +23,6 @@ Ordered in priority.
 | Which clustering algorithm is used in the experiments? | <ul><li>[ ] Mention K-means in Experimentation section</li></ul>| Triaged | 
 | How does the algorithm deal with missing values? | <ul><li>[ ] Think about how missing values affects the algorithms.</li></ul>| Triaged | 
 | Legend is too small | <ul><li>[ ] Make legend axis larger/enlarge graphs</li></ul> | Triaged |
-| Several other works we could explore | 
-<ul>
-    <li>[ ] Test-Cost Sensitive Classification on Data with Missing Values, Yang et al. TKDE 2006</li>
-    <li>[ ] Zhao H, Li X. A cost sensitive decision tree algorithm based on weighted class distribution with batch deleting attribute mechanism. Inf Sci 2016</li>
-    <li>[ ] Feng S. A cost-sensitive decision tree under the condition of multiple classes. In: International Conference on Logistics Engineering, Management and Computer Science; 2015</li>
-    <li>[ ] Test-Cost Sensitive Classification Based on Conditioned Loss Functions, Cebe and Demir, ECML 2007</li>
-</ul> | Triaged |
+| Several other works we could explore | <ul><li>[ ] Test-Cost Sensitive Classification on Data with Missing Values, Yang et al. TKDE 2006</li><li>[ ] Zhao H, Li X. A cost sensitive decision tree algorithm based on weighted class distribution with batch deleting attribute mechanism. Inf Sci 2016</li><li>[ ] Feng S. A cost-sensitive decision tree under the condition of multiple classes. In: International Conference on Logistics Engineering, Management and Computer Science; 2015</li><li>[ ] Test-Cost Sensitive Classification Based on Conditioned Loss Functions, Cebe and Demir, ECML 2007</li></ul> | Triaged |
 
 We can also open source the code once we've cleaned it up
