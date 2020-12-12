@@ -7,7 +7,7 @@ Ordered in priority.
 | Feedback    | Action items           | Assigned to     |
 | :------------- |:-------------:| -----:|
 | Find larger datasets to justify results (More features) | <ul><li>[ ] Test the method on new dataset</li><li>[ ] Graph & Write-up new findings</li></ul>| Triaged | 
-| Clarify how CBCT identifies nearest points by clustering | <ul><li>[ ] Test the method on new dataset</li></ul> | Triaged |
+| Clarify how CBCT identifies nearest points by clustering | <ul><li>[ ] Justify how clustering is an appropriate method to identify nearest points.</li></ul> | Triaged |
 | The cost function is uniform for all features | <ul><li>[ ] Test the method with random cost functions</li></ul> | Triaged |
 | Why can't Naive bayes by Chai et al. be used? | <ul><li>[ ] Look into the method</li><li>[ ] Survey the field for other potential methods which address this problem indirectly</li><li>[ ] Benchmark other methods, if any</li></ul>| Triaged | 
 | No reference to Figure 3 and Figure 5 is confusing | <ul><li>[ ] Revisit these graphs and determine whether or not we need it </li></ul> | Triaged |
