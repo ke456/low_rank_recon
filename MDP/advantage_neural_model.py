@@ -1,5 +1,6 @@
 from model_abstract import ModelAbstract
 import torch.nn as nn
+import torch
 from base_neural_model import EstimatorModelBase
 
 class AdvantageModel(EstimatorModelBase):
@@ -21,5 +22,5 @@ class AdvantageModel(EstimatorModelBase):
     def _forward_output(self, hidden_state):
         self.value_output = self.value(hidden_state)
         self.advantage_output = self.advantage(hidden_state)
-        return self.advantage_output + self.value_output
+        return (self.advantage_output - torch.mean(self.advantage_output, dim=1, keepdims=True)) + self.value_output
     

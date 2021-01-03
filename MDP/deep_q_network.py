@@ -158,7 +158,7 @@ class DQNAgent(BaseRLAgent):
         
         episode_rewards = []
 
-        for episode in range(max_episodes):
+        for episode in range(1, max_episodes+1):
             state = env.reset()
             episode_reward = 0
 
@@ -177,7 +177,8 @@ class DQNAgent(BaseRLAgent):
 
                 if done or (step == max_steps-1):
                     episode_rewards.append(episode_reward)
-                    #self.print_episode_debug(episode, episode_reward, state,env)
+                    if episode % 10 == 0:
+                        self.print_episode_debug(episode, episode_reward, state,env)
                     self.update_epsilon()
                     break
 
