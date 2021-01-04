@@ -60,6 +60,9 @@ class Data:
         self.ranks = {}
         self.true_ranks = []
         self.validation = []
+        
+        self.batch = 0
+        self.batch_prop = 0.1 # each batch is 10% of the total data
     
     def loadfile(self, fname):
         self.data = [] # list of Tuples
@@ -86,6 +89,7 @@ class Data:
         self.action_space = len(self.data[0][1])+1
         self.observation_space = (self.action_space,)
         self.validation = [i for i in range(len(self.data))]
+        
             
     def get(self, key):
         t = (copy.copy(self.data[key][0]), copy.copy(self.data[key][1])+[nan])
@@ -127,6 +131,11 @@ class Data:
             if prob < self.unknown_rate:
                 datapoint[2][index] = nan
         datapoint[2][-1] = nan
+        
+        self.batch = self.batch + 1
+        if start + self.batch_size > len(self.data):
+            self.batch = 0
+        
         return (datapoint[0], bool_feature(datapoint[2]), datapoint[2])
             
     def normalize(self):
@@ -140,7 +149,7 @@ class Data:
             self.normalizing_vals[0].append(max_v)
             self.normalizing_vals[1].append(min_v)
             for d in self.data:
-                d[1][f] = (d[1][f]-min_v)/(max_v - min_v)
+                d[1][f] = 1 + ( (d[1][f]-min_v) * (-1-1) )/(max_v - min_v)
                 
     def set_costs(self,costs=[]):
         self.costs = copy.copy(costs)
@@ -288,7 +297,8 @@ class Data:
     def score(self, t):
         
         if self.c_num == self.KMEANS:
-            return self.rank_all(t)
+            #return self.rank_all(t)
+            return self.rank_batched(t)
     
     def rank_all(self,t):
         rank = 0
@@ -306,6 +316,31 @@ class Data:
                 rank += self.rank(cur)[0]
             val = rank/len(self.validation)
             self.ranks[str(features)] = val
+            return val
+        
+    def rank_batched(self, t):
+        rank = 0
+        features = t[1]
+        #if str(features) in self.ranks:
+        #    return self.ranks[str(features)]
+        if False:
+            # do nothing
+            a = 1
+        else:
+            self.batch_size = int(len(self.data) * self.batch_prop)
+            start = self.batch * self.batch_size
+            end = min(start + self.batch_size, len(self.data) )
+            #print("batch:", self.batch, self.batch_size)
+            #print("s,e:", start, end)
+            
+            for i in range(start, end): 
+                cur = self.get(i)
+                for j in range(len(cur[1])):
+                    if (features[j] == 0):
+                        cur[2][j] = nan
+                rank += self.rank(cur)[0]
+            val = rank/(end-start)
+            #self.ranks[str(features)] = val
             return val
         
     def empty(self, p):
