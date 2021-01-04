@@ -63,6 +63,7 @@ class Data:
         
         self.batch = 0
         self.batch_prop = 0.1 # each batch is 10% of the total data
+        self.batch_size = 0
     
     def loadfile(self, fname):
         self.data = [] # list of Tuples
@@ -133,6 +134,7 @@ class Data:
         datapoint[2][-1] = nan
         
         self.batch = self.batch + 1
+        start = self.batch * self.batch_size
         if start + self.batch_size > len(self.data):
             self.batch = 0
         
