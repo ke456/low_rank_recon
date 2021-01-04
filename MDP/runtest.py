@@ -11,7 +11,7 @@ from Data_binary import *
 
 
 
-def runtest(env, test_env, max_eps=1000, epsilon_decay=0.993):
+def runtest(env, test_env, max_eps=500, epsilon_decay=0.98):
     
     
     MAX_EPISODES = max_eps
