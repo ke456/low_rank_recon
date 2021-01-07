@@ -424,19 +424,31 @@ double Tree::knn_avg_dist(const Tuple &t, const Tuple &t_true, const int k){
     dists.emplace_back(distance_l2_known(t, data[i]));
   }
   double res = 0;
+  vector<int> already_in;
   for (int i = 0; i < k; i++){
     double min_dist = dists[0];
     double ind = 0;
-    for (int i = 0; i < dists.size(); i++){
-      auto d = dists[i];
-      if (min_dist > d){
+    for (int j = 1; j < dists.size(); j++){
+      auto d = dists[j];
+      // ensure that we don't add the same min over again
+      if (min_dist > d && find(already_in.begin(), already_in.end(), j) == already_in.end() ){
 	min_dist = d;
-	ind = i;
+	ind = j;
       }
     }
+    /*
+    if (known_features(t).size() == 13){
+      cout << "t and min" << endl;
+      print(t);
+      print(data[indices[ind]]);
+      cout << "dist: " << distance_l2(t_true, data[indices[ind]]) << endl;
+      cout << "mindist: " << min_dist << endl;
+    }
+    */
     res += distance_l2(t_true, data[indices[ind]]);
-    dists.erase(dists.begin()+ind);
-    if (dists.size() == 0) break;
+    already_in.emplace_back(ind);
+    //dists.erase(dists.begin()+ind);
+    //if (dists.size() == 0) break;
 
   }
   return res;

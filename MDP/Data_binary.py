@@ -4,7 +4,7 @@ import numpy as np
 import random as rand
 import statistics
 
-nan = -0.0000001
+nan = 0.500000000000001
 
 def isnan(v):
     return v == nan
@@ -91,7 +91,17 @@ class Data:
         self.observation_space = (self.action_space,)
         self.validation = [i for i in range(len(self.data))]
         
-            
+    def write_data(self,fname):
+        f = open(fname, 'w')
+        for t in self.data:
+            d = t[1]
+            for i in range(len(d)):
+                f.write(str(d[i]))
+                if i == len(d)-1:
+                    f.write("\n")
+                else:
+                    f.write(",")
+    
     def get(self, key):
         t = (copy.copy(self.data[key][0]), copy.copy(self.data[key][1])+[nan])
         return (t[0], bool_feature(t[1]), t[1])
@@ -151,7 +161,7 @@ class Data:
             self.normalizing_vals[0].append(max_v)
             self.normalizing_vals[1].append(min_v)
             for d in self.data:
-                d[1][f] = 1 + ( (d[1][f]-min_v) * (-1-1) )/(max_v - min_v)
+                d[1][f] = ( (d[1][f]-min_v)  )/(max_v - min_v)
                 
     def set_costs(self,costs=[]):
         self.costs = copy.copy(costs)
