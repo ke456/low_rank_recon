@@ -1,4 +1,5 @@
 import copy
+import time
 from sklearn.cluster import KMeans
 import numpy as np
 import random as rand
@@ -40,7 +41,7 @@ class Data:
     # Constants for clustering 'mode'
     KMEANS = 0
     
-    def __init__(self, unknown_rate=0.3, tuples = []):
+    def __init__(self, unknown_rate=0.3, tuples = [], seed=3):
         self.data = copy.copy(tuples)
         self.normalizing_vals = ([], []) # use this to normalize new points
         self.clustering = None
@@ -64,6 +65,8 @@ class Data:
         self.batch = 0
         self.batch_prop = 0.1 # each batch is 10% of the total data
         self.batch_size = 0
+        self.numpy_data = None
+        rand.seed(seed)
     
     def loadfile(self, fname):
         self.data = [] # list of Tuples
@@ -400,30 +403,76 @@ class Data:
         MSE = np.linalg.norm(ind - ind_true,2) / L
         
         return MSE, (ranks_true[0] == ranks[0])
+
     
+     # retrieves K most similar elements to t
+    def K_most_similar(self, ranks, p, K, with_rank_diff=False):
+        first = ranks.index(0)
+        fs = bool_feature(p)
+        p_fs = proj(p,fs)
+        mask = np.array(fs)
+        masked_p = p * mask
+        
+        if self.numpy_data is None:
+            self.numpy_data = np.array([row[1] for row in self.data])    
+            
+        # measure the distance between the given ranks and ranks of each point in D
+        point_diff = np.linalg.norm( masked_p - self.numpy_data * mask, ord=2, axis=1)
+        if with_rank_diff:
+            point_diff += np.linalg.norm( np.array(ranks) - np.array(self.true_ranks[:len(self.data)]), ord=2, axis=1)
+        
+        bottom_K_idx = np.argsort(point_diff)[:K]
+        bottom_K_values = point_diff[bottom_K_idx]
+        bottom_K_data = self.numpy_data[bottom_K_idx]
+        
+        return bottom_K_idx, bottom_K_values, bottom_K_data
+    
+    # DEPRECATED
     # retrieves K most similar elements to t
     def retrieve(self, ranks, p, K):
         first = ranks.index(0)
         fs = bool_feature(p)
+        mask = np.array(fs)
         p_fs = proj(p,fs)
-        # measure the distance between the given ranks and ranks of each point in D
-        dists = [ (np.linalg.norm( np.array(ranks) - np.array(self.true_ranks[i]),2)+
-                   np.linalg.norm( p_fs - proj(self.data[i][1], fs),2), i) for i in range(len(self.data)) ]
-        dists.sort()
+        masked_p = p * mask
         
-        return [ self.data[dists[i][1]] for i in range(K) ]
+        if self.numpy_data is None:
+            self.numpy_data = np.array([row[1] for row in self.data])        
+        
+        # measure the distance between the given ranks and ranks of each point in D
+        rank_diff = np.linalg.norm( np.array(ranks) - np.array(self.true_ranks[:len(self.data)]), ord=2, axis=1)
+        point_diff = np.linalg.norm( masked_p - self.numpy_data * mask, ord=2, axis=1)
+        np_dists = rank_diff + point_diff
+        
+        # Original unoptimized code
+        #dists = [ (np.linalg.norm( np.array(ranks) - np.array(self.true_ranks[i]),2)+
+        #           np.linalg.norm( p_fs - proj(self.data[i][1], fs),2), i) for i in range(len(self.data)) ]
+        #dists.sort(key=lambda x: x[0])
+        
+        bottom_K_idx = np.argsort(np_dists)[:K]
+        
+        return [ self.data[i] for i in bottom_K_idx ]
     
-     # retrieves K most similar elements to t
+    # DEPRECATED
+    # retrieves K most similar elements to t
     def retrieve2(self, ranks, p, K):
         first = ranks.index(0)
         fs = bool_feature(p)
         p_fs = proj(p,fs)
-        # measure the distance between the given ranks and ranks of each point in D
-        dists = [ (0+
-                   np.linalg.norm( p_fs - proj(self.data[i][1], fs),2), i) for i in range(len(self.data)) ]
-        dists.sort()
+        mask = np.array(fs)
+        masked_p = p * mask
         
-        return [ self.data[dists[i][1]] for i in range(K) ]
+        if self.numpy_data is None:
+            self.numpy_data = np.array([row[1] for row in self.data])    
+            
+        # measure the distance between the given ranks and ranks of each point in D
+        point_diff = np.linalg.norm( masked_p - self.numpy_data * mask, ord=2, axis=1)
+        bottom_K_idx = np.argsort(point_diff)[:K]
+        #dists = [ (0+
+        #           np.linalg.norm( p_fs - proj(self.data[i][1], fs),2), i) for i in range(len(self.data)) ]
+        #dists.sort()
+        
+        return [ self.data[i] for i in bottom_K_idx ]
     
     def nearest_points(self, p, K):
         dists = [ (np.linalg.norm( np.array(p) - np.array(self.data[i]), 2),i) for i in range(len(self.data)) ]

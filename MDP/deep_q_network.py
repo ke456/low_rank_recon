@@ -4,6 +4,8 @@ from base_rl_agent_torch import BaseRLAgent
 import numpy as np
 import random
 import copy as copy
+import time
+import pickle
 
 class DQNAgent(BaseRLAgent):
     """Base model for Deep Q Network Agents
@@ -35,6 +37,7 @@ class DQNAgent(BaseRLAgent):
                 lr=self.learning_rate)
         self.iteration = 0
         self.exploration_penalty = exploration_penalty
+        self.last_debug_print_time = -1
         
     def get_action(self, state, env):
         """ Epsilon greedy, with probability 1-epsilon of taking a greedy action, 
@@ -156,7 +159,7 @@ class DQNAgent(BaseRLAgent):
         self.model.to(self.device)
         self.target_model.to(self.device)
         
-        episode_rewards = []
+        self.episode_rewards = []
 
         for episode in range(1, max_episodes+1):
             state = env.reset()
@@ -176,7 +179,7 @@ class DQNAgent(BaseRLAgent):
                     self.iteration += 1
 
                 if done or (step == max_steps-1):
-                    episode_rewards.append(episode_reward)
+                    self.episode_rewards.append(episode_reward - step*self.exploration_penalty)
                     if episode % 10 == 0:
                         self.print_episode_debug(episode, episode_reward, state,env)
                     self.update_epsilon()
@@ -184,9 +187,13 @@ class DQNAgent(BaseRLAgent):
 
                 state = next_state
 
-        return episode_rewards
+        return self.episode_rewards
     
     def print_episode_debug(self, episode, episode_reward, state,env):
+        # Print every second to avoid non-thread safe printing
+        if time.time() - self.last_debug_print_time < 1:
+            return
+        self.last_debug_print_time = time.time()
         if self.verbose>0: print("end state:", state[1],"score:", env.score(state))
         if self.verbose>0: print(self.cur_qval)
         if self.verbose==0: 
@@ -276,6 +283,33 @@ class DQNAgent(BaseRLAgent):
 
     def update_epsilon(self):
         self.epsilon = max(self.epsilon * self.epsilon_decay, self.epsilon_min)
+        
+    def save_model(self, path, inference_only=False):
+        if inference_only:
+            torch.save(self.model.state_dict(), path)
+        else:
+            torch.save(self.model, path)
+        
+    def load_model(self, path, inference_only=False, **kwargs):
+        if inference_only:
+            if self.model is None:
+                self.model = literal_listener.build_graph()
+                
+            self.model.load_state_dict(torch.load(path, **kwargs))
+            self.target_model.load_state_dict(self.model.state_dict())
+            self.model.eval()
+        else:
+            self.model = torch.load(path, **kwargs)
+            self.target_model.load_state_dict(self.model.state_dict())
+            self.model.eval()
+            
+    def save_episode_rewards(self, output_filename):
+        with open(output_filename, 'wb') as f:
+            pickle.dump(self.episode_rewards, f)
+
+    def load_episode_rewards(self, src_filename):
+        with open(src_filename, 'rb') as f:
+            self.episode_rewards = pickle.load(f)
 
 
 def simple_example():
