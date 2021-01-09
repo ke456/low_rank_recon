@@ -1,6 +1,8 @@
 #include "agent.h"
 #include <iostream>
 #include <stdlib.h>
+const double epsilon = 0.0001;
+
 /*********************************************/
 /* SETTERS                                   */
 /*********************************************/
@@ -28,7 +30,7 @@ bool tree_agent::next_action(){
     // find the feature that we are allowed to update
     int first = 0;
     for (; first < (*cur).size(); first++){
-      if ((*cur)[first] == -1 && (*costs)[first] + cur_cost <= budget){
+      if ((*cur)[first] == -1 && (*costs)[first] + cur_cost <= budget + epsilon){
 	cur_cost += (*costs)[first];
 	(*cur)[first] = (*cur_true)[first];
 	return true;
@@ -41,7 +43,7 @@ bool tree_agent::next_action(){
 bool random_agent::next_action(){
   vector<int> available_actions;
   for (int i = 0; i < (*cur).size(); i++){
-    if ((*cur)[i] == -1 && cur_cost+(*costs)[i] <= budget)
+    if ((*cur)[i] == -1 && cur_cost+(*costs)[i] <= budget + epsilon)
       available_actions.emplace_back(i);
   }
   if (available_actions.size() == 0)

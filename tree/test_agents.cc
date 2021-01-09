@@ -69,7 +69,7 @@ void run_test(Table &training, Table &test, Tuple &costs){
       ta.set_costs(&costs);
       ta.set_budget(budget);
       ta.set(&t, &test[i]);
-      while(ta.next_action()){}
+      while(ta.next_action()){} 
       dist_rand[bc] += cbct.knn_avg_dist(t, test[i], 5);
     }
   }
