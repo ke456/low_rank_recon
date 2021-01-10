@@ -11,6 +11,7 @@ from Data_binary import *
 def setup_env(env_name, max_cost):
     if env_name == "survey":
         env = Data(unknown_rate=1)
+<<<<<<< HEAD
         env.loadfile_noshuffle("csv_files/partitioned_data/survey_training.csv")
         costs = read_costs("csv_files/partitioned_data/survey_cost.csv")
     elif env_name == "hcv":
@@ -21,15 +22,42 @@ def setup_env(env_name, max_cost):
         env = Data(unknown_rate=1)
         env.loadfile_noshuffle("csv_files/partitioned_data/liver_training.csv") 
         costs = read_costs("csv_files/partitioned_data/liver_cost.csv")
+=======
+        env.loadfile("survey.csv")
+    elif env_name == "hcv":
+        env = Data(unknown_rate=1)
+        env.loadfile("hcv.csv") # change this to the test file
+    elif env_name == "liver":
+        env = Data(unknown_rate=1)
+        env.loadfile("liver.csv") # change this to the test file
+    elif env_name == "thyroid":
+        env = Data(unknown_rate=1)
+        env.loadfile("csv_files/thyroid.csv")
+        # these are official costs listed from OHIP fee schedule. The features assigned 0 cost are from a survey.
+        # The last feature (21st) is just a transformed feature of the 19th and 20th feature and so it's cost is the two costs combined.
+        # We can also forgo the last feature.
+        costs = [0 for i in range(16)] + [22.78, 11.41, 14.51, 11.41, 14.51 + 11.41]
+        total = sum(costs)
+        costs = [cost/total for cost in costs]
+        env.set_costs(costs)
+>>>>>>> 172d99a (Adds thyroid)
     else:
         print(env_name, "is not a valid environment name.")
         return None
               
+<<<<<<< HEAD
     env.alpha = 0
     env.cluster_K_means(7)
     env.max_cost = max_cost
     env.set_costs(costs)
     
+=======
+    env.normalize()
+    env.alpha = 0
+    env.cluster_K_means(7)
+    env.max_cost = max_cost
+    env.split(0.80)
+>>>>>>> 172d99a (Adds thyroid)
     return env
     
 def train_and_save(env_name, max_cost, gamma=0.95, ep_decay=0.997, max_episodes=1000):

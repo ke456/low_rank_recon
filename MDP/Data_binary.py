@@ -176,7 +176,7 @@ class Data:
             #if True:
                 datapoint[2][index] = nan
         datapoint[2][-1] = nan
-        return (datapoint[0], bool_feature(datapoint[2]), datapoint[2])
+        return datapoint[0], bool_feature(datapoint[2]), datapoint[2]
         
     def reset(self):
         # Returns a random datapoint as state with some unknowns
@@ -464,10 +464,8 @@ class Data:
 
     
      # retrieves K most similar elements to t
-    def K_most_similar(self, ranks, p, K, with_rank_diff=False):
-        first = ranks.index(0)
+    def K_most_similar(self, true_ranks, p, K, with_rank_diff=False):
         fs = bool_feature(p)
-        p_fs = proj(p,fs)
         mask = np.array(fs)
         masked_p = p * mask
         
@@ -477,7 +475,7 @@ class Data:
         # measure the distance between the given ranks and ranks of each point in D
         point_diff = np.linalg.norm( masked_p - self.numpy_data * mask, ord=2, axis=1)
         if with_rank_diff:
-            point_diff += np.linalg.norm( np.array(ranks) - np.array(self.true_ranks[:len(self.data)]), ord=2, axis=1)
+            point_diff += np.linalg.norm( np.array(true_ranks) - np.array(self.true_ranks[:len(self.data)]), ord=2, axis=1)
         
         bottom_K_idx = np.argsort(point_diff)[:K]
         bottom_K_values = point_diff[bottom_K_idx]
