@@ -11,22 +11,25 @@ from Data_binary import *
 def setup_env(env_name, max_cost):
     if env_name == "survey":
         env = Data(unknown_rate=1)
-        env.loadfile("survey.csv")
+        env.loadfile_noshuffle("csv_files/partitioned_data/survey_training.csv")
+        costs = read_costs("csv_files/partitioned_data/survey_cost.csv")
     elif env_name == "hcv":
         env = Data(unknown_rate=1)
-        env.loadfile("hcv.csv") # change this to the test file
+        env.loadfile_noshuffle("csv_files/partitioned_data/hcv_training.csv")
+        costs = read_costs("csv_files/partitioned_data/hcv_cost.csv")
     elif env_name == "liver":
         env = Data(unknown_rate=1)
-        env.loadfile("liver.csv") # change this to the test file
+        env.loadfile_noshuffle("csv_files/partitioned_data/liver_training.csv") 
+        costs = read_costs("csv_files/partitioned_data/liver_cost.csv")
     else:
         print(env_name, "is not a valid environment name.")
         return None
               
-    env.normalize()
     env.alpha = 0
     env.cluster_K_means(7)
     env.max_cost = max_cost
-    env.split(0.80)
+    env.set_costs(costs)
+    
     return env
     
 def train_and_save(env_name, max_cost, gamma=0.95, ep_decay=0.997, max_episodes=1000):

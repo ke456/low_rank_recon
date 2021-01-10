@@ -1,6 +1,8 @@
 #include "agent.h"
 #include <iostream>
 #include <stdlib.h>
+#include <sstream>
+#include <fstream>
 const double epsilon = 0.0001;
 
 /*********************************************/
@@ -53,3 +55,48 @@ bool random_agent::next_action(){
   cur_cost += (*costs)[ind];
   return true;
 }
+
+trained_agent::trained_agent(string fname){
+  ifstream ifs{fname};
+  string line;
+  while (getline(ifs,line)){
+    vector<int> v;
+    istringstream iss{line};
+    int s;
+    while (iss >> s){
+      v.emplace_back(s);
+      char c;
+      iss >> c;
+    }
+    steps.emplace_back(v);
+  }
+  cur_index = -1;
+  cur_step = -1;
+}
+
+void trained_agent::set_index(int ind){
+  cur_index = ind;
+  cur_step = 0;
+}
+
+bool trained_agent::next_action(){
+  if (cur_step < steps[cur_index].size() ){
+    int ind = steps[cur_index][cur_step++];
+    (*cur)[ind] = (*cur_true)[ind];
+    cur_cost += (*costs)[ind];
+    return true;
+  }
+  cur_index = -1;
+  return false;
+}
+
+
+
+
+
+
+
+
+
+
+

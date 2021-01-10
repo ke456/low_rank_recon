@@ -4,6 +4,7 @@
 #include "utility.h"
 #include "tree.h"
 #include <vector>
+#include <string>
 using namespace std;
 class agent{
   protected:
@@ -46,6 +47,38 @@ class tree_agent : public agent{
   tree_agent(Tree *t);
   bool next_action();
 };
-
-
+ 
+class trained_agent : public agent{
+  vector<vector<int> > steps;
+  int cur_index;
+  int cur_step;
+  
+  public:
+  // reads the steps from fname
+  // the file should be a csv, each line contain 
+  // the sequence of feature updates in the same line 
+  // order as the test file
+  trained_agent(string fname); 
+  
+  // sets the current index to be ind and resets
+  void set_index(int ind);
+  // will fail if called after the agent finishes
+  bool next_action();
+};
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -10,6 +10,15 @@ nan = 0.500000000000001
 def isnan(v):
     return v == nan
 
+def read_costs(fname):
+    f = open(fname, 'r')
+    line = f.readline()
+    s = line.split(',')
+    costs = []
+    for ss in s:
+        costs.append(float(ss))
+    return costs
+
 # assumes that the tuple given is (id, val)
 def bool_feature(p):
     val = p
@@ -94,6 +103,32 @@ class Data:
         self.observation_space = (self.action_space,)
         self.validation = [i for i in range(len(self.data))]
         
+    def loadfile_noshuffle(self, fname):
+        self.data = [] # list of Tuples
+        temp_data = [] # just the data portion
+        f = open(fname, 'r')
+        lines = f.readlines()
+        ID = 0
+        for l in lines:
+            s = l.split(',')
+            val = []
+            to_append = True
+            for sv in s:
+                val.append(float(sv))
+                if -1 in val:
+                    to_append = False
+                    break
+            if to_append:
+                temp_data.append(val)
+        #rand.shuffle(temp_data)
+        for d in temp_data:
+            self.data.append((ID,d))
+            ID += 1
+        self.costs = [ 0 for i in range(len(self.data[0][1]))]
+        self.action_space = len(self.data[0][1])+1
+        self.observation_space = (self.action_space,)
+        self.validation = [i for i in range(len(self.data))]    
+        
     def write_data(self,fname):
         f = open(fname, 'w')
         for t in self.data:
@@ -104,6 +139,18 @@ class Data:
                     f.write("\n")
                 else:
                     f.write(",")
+        f.close()
+                    
+    def write_cost(self, fname):
+        f = open(fname, 'w')
+        for i in range(len(self.costs)):
+            f.write(str(self.costs[i]))
+            if i == len(self.costs) -1:
+                f.write("\n")
+            else:
+                f.write(",")
+        f.close()
+            
     
     def get(self, key):
         t = (copy.copy(self.data[key][0]), copy.copy(self.data[key][1])+[nan])
@@ -403,6 +450,17 @@ class Data:
         MSE = np.linalg.norm(ind - ind_true,2) / L
         
         return MSE, (ranks_true[0] == ranks[0])
+    
+    def write_k_means(self, fname):
+        f = open(fname, 'w')
+        clusters = self.clustering.cluster_centers_
+        for c in clusters:
+            for i in range(len(c)):
+                f.write(str(c[i]))
+                if i == len(c)-1:
+                    f.write("\n")
+                else:
+                    f.write(",")
 
     
      # retrieves K most similar elements to t
@@ -473,6 +531,8 @@ class Data:
         #dists.sort()
         
         return [ self.data[i] for i in bottom_K_idx ]
+    
+    
     
     def nearest_points(self, p, K):
         dists = [ (np.linalg.norm( np.array(p) - np.array(self.data[i]), 2),i) for i in range(len(self.data)) ]
