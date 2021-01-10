@@ -62,7 +62,6 @@ void run_test(Table &training, Table &test, Tuple &costs, string to_runs){
       double budget = (bc+1.0)/N;
       string ap = add(to_string(bc+1), ".0.csv");
       string fname = add(to_runs,ap);
-      cout << "at: " << i << ", fname: " << fname << endl;
       trained_agent ta(fname);
       ta.set_costs(&costs);
       ta.set_budget(budget);
