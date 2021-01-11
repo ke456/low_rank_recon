@@ -10,7 +10,7 @@ import copy
 import time
 from Data_binary import *
 
-def testAgent(env, test_env, env_name, max_cost, gamma=0.95, max_eps=4000, epsilon_decay=0.9983):
+def testAgent(env, test_env, env_name, max_cost, gamma=0.95, max_eps=4000, epsilon_decay=0.9983, learning_rate=0.01, update_steps=100):
     
     MAX_EPISODES = max_eps
     MAX_STEPS = 32
@@ -27,9 +27,11 @@ def testAgent(env, test_env, env_name, max_cost, gamma=0.95, max_eps=4000, epsil
                            gamma=gamma,
                            epsilon_decay=epsilon_decay,
                            exploration_penalty=-0.0,
+                           learning_rate=learning_rate,
+                           update_steps=update_steps,
                            verbose=0 # Verbosity level
                           )
-    agent_string = "env"+env_name+"-max_cost"+str(max_cost)+"-gamma"+str(agent.gamma)+"-ep_decay"+str(agent.epsilon_decay)+"-max_episodes"+str(MAX_EPISODES)
+    agent_string = "env"+env_name+"-max_cost"+str(max_cost)+"-gamma"+str(agent.gamma)+"-ep_decay"+str(agent.epsilon_decay)+"-max_episodes"+str(MAX_EPISODES)+"-update_steps"+str(update_steps)
     agent.load_model("saved_models/"+agent_string+".pt")
     agent.load_episode_rewards("metrics/" + agent_string+".pkl")
     episode_rewards = agent.episode_rewards
@@ -51,7 +53,7 @@ def testAgent(env, test_env, env_name, max_cost, gamma=0.95, max_eps=4000, epsil
         
         done = False
         while not done:
-            action = agent.get_action(observation,env)
+            action = agent.get_action(observation, test_env)
             observation, reward, done, info = test_env.step(observation, action)
         ranks = test_env.compute_ranks(observation)
         K_most_similar_indices, K_most_similar_values, K_most_similar_data = env.K_most_similar(ranks, observation[2][:n], k)
