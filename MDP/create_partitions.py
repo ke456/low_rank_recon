@@ -7,14 +7,15 @@ random.seed(seed)
 # list of tests (just the root of the file name)
 tests = ['survey', 'liver', 'hcv', 'thyroid']
 thyroid_costs = [0 for i in range(16)] + [22.78, 11.41, 14.51, 11.41, 14.51 + 11.41]
-thyroid_costs = [thyroid_costs/sum(thyroid_costs) for cost in costs]
+thyroid_costs = [cost/sum(thyroid_costs) for cost in thyroid_costs]
 
 for test in tests:
     # first create the environment and load the data
     env = Data(unknown_rate=1)
     env.loadfile("csv_files/" + test + ".csv") 
-    if test != 'thyroid'
-    env.normalize()
+    print(test)
+    if test != 'thyroid':
+        env.normalize()
     env.alpha = 0
     env.cluster_K_means(7)
     
@@ -30,6 +31,15 @@ for test in tests:
     
     # partition data and write to file
     test_env = env.split(0.80)
+    
+    if test in ['survey', 'thyroid']:
+        validation_ratio=0.9
+    else:
+        validation_ratio=0.8
+    val_env = test_env.split(validation_ratio)
+    
+    
+    val_env.write_data("csv_files/partitioned_data/" + test + "_val.csv")
     env.write_data("csv_files/partitioned_data/" + test + "_training.csv")
     test_env.write_data("csv_files/partitioned_data/" + test + "_test.csv")
     env.write_cost("csv_files/partitioned_data/" + test + "_cost.csv")

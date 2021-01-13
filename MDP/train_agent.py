@@ -24,14 +24,8 @@ def setup_env(env_name, max_cost):
         costs = read_costs("csv_files/partitioned_data/liver_cost.csv")
     elif env_name == "thyroid":
         env = Data(unknown_rate=1)
-        env.loadfile("csv_files/thyroid.csv")
-        # these are official costs listed from OHIP fee schedule. The features assigned 0 cost are from a survey.
-        # The last feature (21st) is just a transformed feature of the 19th and 20th feature and so it's cost is the two costs combined.
-        # We can also forgo the last feature.
-        costs = [0 for i in range(16)] + [22.78, 11.41, 14.51, 11.41, 14.51 + 11.41]
-        total = sum(costs)
-        costs = [cost/total for cost in costs]
-        env.set_costs(costs)
+        env.loadfile("csv_files/partitioned_data/thyroid_training.csv")
+        costs = read_costs("csv_files/partitioned_data/thyroid_cost.csv")
     else:
         print(env_name, "is not a valid environment name.")
         return None
