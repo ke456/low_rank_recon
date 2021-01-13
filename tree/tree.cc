@@ -427,7 +427,7 @@ double Tree::knn_avg_dist(const Tuple &t, const Tuple &t_true, const int k){
   vector<int> already_in;
   for (int i = 0; i < k; i++){
     double min_dist = dists[0];
-    double ind = 0;
+    int ind = 0;
     for (int j = 1; j < dists.size(); j++){
       auto d = dists[j];
       // ensure that we don't add the same min over again
