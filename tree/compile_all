@@ -1,0 +1,4 @@
+#!/bin/bash
+
+g++ -std=c++14 kmeans.cc tree.cc utility.cc agent.cc train_tree.cc -o train_tree -g
+g++ -std=c++14 kmeans.cc tree.cc utility.cc agent.cc generate_results.cc -o generate -g
