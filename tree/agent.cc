@@ -27,6 +27,7 @@ bool tree_agent::next_action(){
     // we are allowed to take the action that the cbct suggests
     (*cur)[S.feature] = (*cur_true)[S.feature];
     cur_cost += (*costs)[S.feature];
+    last_updated = S.feature;
     return true;
   }else{
     // find the feature that we are allowed to update
@@ -35,6 +36,7 @@ bool tree_agent::next_action(){
       if ((*cur)[first] == -1 && (*costs)[first] + cur_cost <= budget + epsilon){
 	cur_cost += (*costs)[first];
 	(*cur)[first] = (*cur_true)[first];
+	last_updated = first;
 	return true;
       }
     }
@@ -53,6 +55,7 @@ bool random_agent::next_action(){
   int ind = available_actions[rand() % available_actions.size()];
   (*cur)[ind] = (*cur_true)[ind];
   cur_cost += (*costs)[ind];
+  last_updated = ind;
   return true;
 }
 
@@ -82,15 +85,19 @@ void trained_agent::set_index(int ind){
 bool trained_agent::next_action(){
   if (cur_step < steps[cur_index].size() ){
     int ind = steps[cur_index][cur_step++];
+    cout << "ind: " << ind << endl;
     (*cur)[ind] = (*cur_true)[ind];
     cur_cost += (*costs)[ind];
+    last_updated = ind;
     return true;
   }
   cur_index = -1;
   return false;
+  
 }
 
-
+trained_agent::~trained_agent(){
+}
 
 
 

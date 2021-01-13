@@ -30,6 +30,7 @@ class agent{
   // sets the current tuple and resets the incurred costs
   void set(Tuple * cur, Tuple * tr);
 
+  int last_updated;
 };
 
 // class for agent that takes random actions
@@ -64,6 +65,8 @@ class trained_agent : public agent{
   void set_index(int ind);
   // will fail if called after the agent finishes
   bool next_action();
+
+  ~trained_agent();
 };
 #endif
 
