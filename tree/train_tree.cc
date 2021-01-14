@@ -36,10 +36,14 @@ void read(Table &data, const string &fname){
 }
 
 void run_test(Table &training, Table &test, Tuple &costs, string out_root){
+  vector<int> ignore;
+  for (int i= 0; i < costs.size(); i++)
+    if (costs[i] == 0) ignore.emplace_back(i);
   vector<int> indices;
   for (int i = 0; i < training.size(); i++)
     indices.emplace_back(i);
   Tree cbct{training, indices, costs};
+  cbct.set_ignore(ignore);
   cbct.split();
   cbct.prune_height(9);
 
@@ -60,7 +64,10 @@ void run_test(Table &training, Table &test, Tuple &costs, string out_root){
     for (int i = 0; i < test.size(); i++){
       // set everything to be unknown
       auto t = test[i];
-      for (auto &h : t) h = -1;
+      //for (auto &h : t) h = -1;
+      for (int j = 0; j < t.size(); j++){
+	if (costs[j] != 0) t[j] = -1;
+      }
 
       vector<int> updates;
 

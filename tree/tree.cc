@@ -93,6 +93,10 @@ vector<double> Tree::compute_centroid(const vector<int> &ind){
   return centroid;
 }
 
+void Tree::set_ignore(const std::vector<int> &ig){
+  ignore = ig;
+}
+
 vector<double> Tree::range(const int feature){
   vector<double> res;
   double min = data[indices[0]][feature];
@@ -157,12 +161,18 @@ void Tree::split(){
     split_b = best_b;
     if (left.size() > 10 && right.size() > 10){
       this->left = new Tree(data, left, new_costs);
+      this->left->set_ignore(ignore);
       this->left->split();
       this->right = new Tree(data, right, new_costs);
+      this->right->set_ignore(ignore);
       this->right->split();
     }
   }
 
+}
+
+bool in(const int i, const vector<int> vec){
+  return find(vec.begin(), vec.end(), i) != vec.end();
 }
 
 void Tree::find_split(int &best_feature, double &best_b, double &max_gain){
@@ -173,6 +183,7 @@ void Tree::find_split(int &best_feature, double &best_b, double &max_gain){
   best_b = 0;
   max_gain = 0;
   for (long f = 0; f <  num_features; f++){
+    if (in(f,ignore)) continue;
     double best_b_feature = 0;
     double max_gain_feature = 0;
     auto r = range(f);

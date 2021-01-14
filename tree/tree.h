@@ -45,6 +45,9 @@ class Tree{
 	// the centroid of the points stored in indices
 	std::vector<double> centroid;
 
+	// ignores these features when creating the trees
+	std::vector<int> ignore;
+
 	// computes the centroid for given indices	
 	std::vector<double> compute_centroid(const std::vector<int> &ind);
 
@@ -91,7 +94,7 @@ public:
 	~Tree();
 
 	void set_groups(const std::vector<std::vector<int>> &g);
-
+	void set_ignore(const std::vector<int> &ig);
 	// utility functions
 	void print_centroid(); // prints the centroid
 	void print_data(); // prints only the data stored in ind

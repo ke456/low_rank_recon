@@ -83,13 +83,16 @@ void trained_agent::set_index(int ind){
 }
 
 bool trained_agent::next_action(){
+  if (steps.size() == 0) return false;
   if (cur_step < steps[cur_index].size() ){
     int ind = steps[cur_index][cur_step++];
-    cout << "ind: " << ind << endl;
-    (*cur)[ind] = (*cur_true)[ind];
-    cur_cost += (*costs)[ind];
-    last_updated = ind;
-    return true;
+    if (ind < (*cur).size()){
+      (*cur)[ind] = (*cur_true)[ind];
+      cur_cost += (*costs)[ind];
+      last_updated = ind;
+      return true;
+    }else
+      return false;
   }
   cur_index = -1;
   return false;

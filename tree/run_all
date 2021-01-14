@@ -1,0 +1,10 @@
+#!/bin/bash
+
+lst="liver hcv survey thyroid"
+./compile_all
+for i in $lst
+do
+	echo "starting test for $i"
+	./train_tree ../MDP/csv_files/partitioned_data/$i ../MDP/agent_runs/$i
+	./generate ../MDP/csv_files/partitioned_data/$i ../MDP/agent_runs/$i ../results/csv_files/$i
+done
