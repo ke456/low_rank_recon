@@ -10,25 +10,9 @@ from advantage_neural_model import AdvantageModel
 from Data_binary import *
 
 def setup_env(env_name, max_cost):
-    if env_name == "survey":
-        env = Data(unknown_rate=1)
-        env.loadfile_noshuffle("csv_files/partitioned_data/survey_training.csv")
-        costs = read_costs("csv_files/partitioned_data/survey_cost.csv")
-    elif env_name == "hcv":
-        env = Data(unknown_rate=1)
-        env.loadfile_noshuffle("csv_files/partitioned_data/hcv_training.csv")
-        costs = read_costs("csv_files/partitioned_data/hcv_cost.csv")
-    elif env_name == "liver":
-        env = Data(unknown_rate=1)
-        env.loadfile_noshuffle("csv_files/partitioned_data/liver_training.csv") 
-        costs = read_costs("csv_files/partitioned_data/liver_cost.csv")
-    elif env_name == "thyroid":
-        env = Data(unknown_rate=1)
-        env.loadfile("csv_files/partitioned_data/thyroid_training.csv")
-        costs = read_costs("csv_files/partitioned_data/thyroid_cost.csv")
-    else:
-        print(env_name, "is not a valid environment name.")
-        return None
+    env = Data(unknown_rate=1)
+    env.loadfile_noshuffle("csv_files/partitioned_data/"+env_name+"_training.csv")
+    costs = read_costs("csv_files/partitioned_data/"+env_name+"_cost.csv")
               
     env.alpha = 0
     env.cluster_K_means(7)

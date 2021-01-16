@@ -5,9 +5,12 @@ seed = 3
 random.seed(seed)
 
 # list of tests (just the root of the file name)
-tests = ['survey', 'liver', 'hcv', 'thyroid']
+#tests = ['survey', 'liver', 'hcv', 'thyroid']
+tests = ['parkinsons']
 thyroid_costs = [0 for i in range(16)] + [22.78, 11.41, 14.51, 11.41, 14.51 + 11.41]
 thyroid_costs = [cost/sum(thyroid_costs) for cost in thyroid_costs]
+cleaveland_heart_costs = [1., 1., 1., 1., 7.27, 5.2, 15.5, 102.9, 87.3, 87.3, 87.3, 100.9, 102.9]
+cleaveland_heart_costs = [cost/sum(cleaveland_heart_costs) for cost in cleaveland_heart_costs]
 
 for test in tests:
     # first create the environment and load the data
@@ -23,6 +26,8 @@ for test in tests:
     N = len(env.data[0][1])
     if test == 'thyroid':
         costs = thyroid_costs
+    if test == 'cleaveland_heart':
+        costs = cleaveland_heart_costs
     else:
         costs = [ random.randint(1,100) for i in range(N) ]
         costs = [costs[i] / sum(costs) for i in range(N)]

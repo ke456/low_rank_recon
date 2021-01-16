@@ -81,25 +81,9 @@ def eval_agent(env_name, max_cost, gamma, ep_decay, eps, lr, update_steps):
     return agent_distance
 
 def setup_val_env(env_name, max_cost):
-    if env_name == "survey":
-        env = Data(unknown_rate=1)
-        env.loadfile_noshuffle("csv_files/partitioned_data/survey_val.csv")
-        costs = read_costs("csv_files/partitioned_data/survey_cost.csv")
-    elif env_name == "hcv":
-        env = Data(unknown_rate=1)
-        env.loadfile_noshuffle("csv_files/partitioned_data/hcv_val.csv")
-        costs = read_costs("csv_files/partitioned_data/hcv_cost.csv")
-    elif env_name == "liver":
-        env = Data(unknown_rate=1)
-        env.loadfile_noshuffle("csv_files/partitioned_data/liver_val.csv") 
-        costs = read_costs("csv_files/partitioned_data/liver_cost.csv")
-    elif env_name == "thyroid":
-        env = Data(unknown_rate=1)
-        env.loadfile("csv_files/partitioned_data/thyroid_val.csv")
-        costs = read_costs("csv_files/partitioned_data/thyroid_cost.csv")
-    else:
-        print(env_name, "is not a valid environment name.")
-        return None
+    env = Data(unknown_rate=1)
+    env.loadfile_noshuffle("csv_files/partitioned_data/"+env_name+"_val.csv")
+    costs = read_costs("csv_files/partitioned_data/"+env_name+"_cost.csv")
               
     env.alpha = 0
     env.cluster_K_means(7)
