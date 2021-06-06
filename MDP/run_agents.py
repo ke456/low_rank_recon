@@ -4,7 +4,8 @@ from train_select import get_num_features
 max_eps=500
 epsilon_decay=0.98
 
-tests = ['parkinsons', 'cleaveland_heart']
+#tests = ['parkinsons', 'cleaveland_heart']
+tests = ['hcv']
 
 def testAgent(env, test_env, env_name, max_cost, gamma=0.95, max_eps=4000, learning_rate=0.01, epsilon_decay=0.9983, update_steps=100):
     

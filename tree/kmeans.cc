@@ -1,6 +1,7 @@
 #include "kmeans.h"
 #include <stdlib.h>
 #include <time.h>
+#include <cmath>
 #include <iostream>
 using namespace std;
 void KMeans::update_label(){

@@ -1,0 +1,18 @@
+The DQN related files are in the directory MDP, written in Python using mostly pytorch and sklearn.
+The CBCTree codes are written in C++ in the directory tree.
+
+To train DQN, run:
+python3 train_all
+This will save all trained networks into saved_models. 
+
+To generate the schedule of updates using the models, run:
+python3 run_agents
+This will save the runs to agent_runs
+
+To compile the C++ code, simply run:
+./compile_all
+
+This script will take everything and output the test results
+./run_all
+
+You can find the test results in the directory results
