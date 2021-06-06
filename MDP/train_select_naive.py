@@ -6,7 +6,7 @@ import random
 # Tuning this off will train the model with certain configs.
 ENABLE_TUNING = True
 # Turning this false will overwrite all the previous models.
-OVERWRITE_ALL_PREVIOUS_MODELS = False
+OVERWRITE_ALL_PREVIOUS_MODELS = True
 
 def train_select(test):
     if ENABLE_TUNING:

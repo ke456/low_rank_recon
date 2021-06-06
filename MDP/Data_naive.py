@@ -404,7 +404,7 @@ class Data:
                 K_closest = self.K_most_similar(true_rank=[],p=cur[2][:len(cur[1])-1], K=K, with_rank_diff=False)
                 local_MSE = 0
                 for neighbour in K_closest[2]:
-                    local_MSE += np.linalg.norm(neighbour - cur[2][:len(cur[1])-1])
+                    local_MSE += np.linalg.norm(neighbour - self.get(i)[2][:len(cur[1])-1])
                 local_MSE = local_MSE/K
                 MSE += local_MSE
             return -MSE/(end-start)
